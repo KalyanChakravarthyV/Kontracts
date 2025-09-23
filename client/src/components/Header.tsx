@@ -15,7 +15,7 @@ export function Header() {
             Dashboard
           </h2>
           <p className="text-muted-foreground" data-testid="text-page-description">
-            Welcome back, manage your contracts and discover pet-friendly places
+            Welcome back, manage your contracts and track compliance
           </p>
         </div>
         <div className="flex items-center space-x-4">

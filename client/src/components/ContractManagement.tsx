@@ -441,9 +441,9 @@ export function ContractManagement() {
                       <td className="py-2 px-2" data-testid={`asc842-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${(item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-rou-value-${index}`}>${item.routAssetValue?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>${item.routAssetAmortization?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${(item.leaseLiability || item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-rou-value-${index}`}>${(item.rouAssetValue || item.routAssetValue)?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>
@@ -473,11 +473,17 @@ export function ContractManagement() {
                     <button 
                       onClick={() => {
                         try {
-                          const parsedScheduleData = JSON.parse(schedule.scheduleData || '[]');
+                          // Handle both object and stringified JSON for backward compatibility
+                          let parsedScheduleData;
+                          if (typeof schedule.scheduleData === 'string') {
+                            parsedScheduleData = JSON.parse(schedule.scheduleData || '[]');
+                          } else {
+                            parsedScheduleData = schedule.scheduleData || [];
+                          }
                           setSelectedScheduleDetails(parsedScheduleData);
                           setShowScheduleDetails(true);
                         } catch (error) {
-                          console.error('Error parsing schedule data:', error);
+                          console.error('Error loading schedule data:', error);
                           toast({
                             title: 'Error',
                             description: 'Could not load schedule details',
@@ -561,9 +567,9 @@ export function ContractManagement() {
                         <td className="py-2 px-2" data-testid={`details-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
                         <td className="py-2 px-2" data-testid={`details-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
                         <td className="py-2 px-2" data-testid={`details-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-liability-${index}`}>${(item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-rou-value-${index}`}>${item.routAssetValue?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-rou-amort-${index}`}>${item.routAssetAmortization?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-liability-${index}`}>${(item.leaseLiability || item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-rou-value-${index}`}>${(item.rouAssetValue || item.routAssetValue)?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-rou-amort-${index}`}>${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}</td>
                         <td className="py-2 px-2" data-testid={`details-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
                         <td className="py-2 px-2" data-testid={`details-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
                         <td className="py-2 px-2" data-testid={`details-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>

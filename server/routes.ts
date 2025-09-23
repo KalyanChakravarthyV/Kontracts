@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const complianceSchedule = await storage.createComplianceSchedule({
         contractId,
         type,
-        scheduleData: JSON.stringify(scheduleData),
+        scheduleData: scheduleData,
         presentValue: presentValue.toString(),
         discountRate: discountRate.toString()
       });
@@ -373,26 +373,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // User pets
-  app.get("/api/user/pets", async (req, res) => {
-    try {
-      const userId = "user-1";
-      const pets = await storage.getUserPets(userId);
-      res.json(pets);
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  app.post("/api/user/pets", async (req, res) => {
-    try {
-      const petData = { ...req.body, userId: "user-1" };
-      const pet = await storage.createUserPet(petData);
-      res.status(201).json(pet);
-    } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
 
   // AI recommendations
   app.get("/api/recommendations", async (req, res) => {
@@ -401,7 +381,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate fresh recommendations
       const contracts = await storage.getContracts(userId);
-      const pets = await storage.getUserPets(userId);
       
       const upcomingPayments = contracts.filter(c => 
         new Date(c.nextPayment) <= new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)

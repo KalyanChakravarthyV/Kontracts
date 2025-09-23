@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type UserPet, type InsertUserPet, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -35,9 +35,6 @@ export interface IStorage {
   markPaymentPaid(paymentId: string): Promise<Payment | undefined>;
   
   
-  // User pets
-  getUserPets(userId: string): Promise<UserPet[]>;
-  createUserPet(pet: InsertUserPet): Promise<UserPet>;
   
   // AI recommendations
   getAIRecommendations(userId: string): Promise<AIRecommendation[]>;
@@ -51,7 +48,6 @@ export class MemStorage implements IStorage {
   private complianceSchedules: Map<string, ComplianceSchedule> = new Map();
   private journalEntries: Map<string, JournalEntry> = new Map();
   private payments: Map<string, Payment> = new Map();
-  private userPets: Map<string, UserPet> = new Map();
   private aiRecommendations: Map<string, AIRecommendation> = new Map();
 
   constructor() {
@@ -101,18 +97,6 @@ export class MemStorage implements IStorage {
     };
     this.contracts.set(contract2.id, contract2);
 
-    // Add sample user pet
-    const userPet: UserPet = {
-      id: "pet-1",
-      userId: "user-1",
-      name: "Buddy",
-      species: "dog",
-      breed: "Golden Retriever",
-      age: 3,
-      specialRequirements: "Friendly with other dogs",
-      createdAt: new Date()
-    };
-    this.userPets.set(userPet.id, userPet);
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -277,23 +261,6 @@ export class MemStorage implements IStorage {
   }
 
 
-  async getUserPets(userId: string): Promise<UserPet[]> {
-    return Array.from(this.userPets.values()).filter(pet => pet.userId === userId);
-  }
-
-  async createUserPet(insertPet: InsertUserPet): Promise<UserPet> {
-    const id = randomUUID();
-    const pet: UserPet = { 
-      ...insertPet, 
-      id,
-      breed: insertPet.breed || null,
-      age: insertPet.age || null,
-      specialRequirements: insertPet.specialRequirements || null,
-      createdAt: new Date()
-    };
-    this.userPets.set(id, pet);
-    return pet;
-  }
 
   async getAIRecommendations(userId: string): Promise<AIRecommendation[]> {
     return Array.from(this.aiRecommendations.values()).filter(rec => rec.userId === userId);

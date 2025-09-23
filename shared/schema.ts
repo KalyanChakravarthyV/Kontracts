@@ -62,16 +62,6 @@ export const journalEntries = pgTable("journal_entries", {
 });
 
 
-export const userPets = pgTable("user_pets", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  name: text("name").notNull(),
-  species: text("species").notNull(),
-  breed: text("breed"),
-  age: integer("age"),
-  specialRequirements: text("special_requirements"),
-  createdAt: timestamp("created_at").default(sql`now()`),
-});
 
 export const payments = pgTable("payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -122,10 +112,6 @@ export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit(
 });
 
 
-export const insertUserPetSchema = createInsertSchema(userPets).omit({
-  id: true,
-  createdAt: true,
-});
 
 export const insertPaymentSchema = createInsertSchema(payments).omit({
   id: true,
@@ -157,8 +143,6 @@ export type JournalEntry = typeof journalEntries.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
 
-export type InsertUserPet = z.infer<typeof insertUserPetSchema>;
-export type UserPet = typeof userPets.$inferSelect;
 
 export type InsertAIRecommendation = z.infer<typeof insertAIRecommendationSchema>;
 export type AIRecommendation = typeof aiRecommendations.$inferSelect;
