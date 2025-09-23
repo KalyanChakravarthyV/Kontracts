@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [location] = useLocation();
   const { data: user } = useQuery({
     queryKey: ["/api/user/profile"],
   });
@@ -50,24 +52,32 @@ export function Sidebar() {
               Main
             </h3>
           )}
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md bg-accent text-accent-foreground font-medium"
+          <Link 
+            href="/" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-dashboard"
             title={isCollapsed ? "Dashboard" : ""}
           >
             <i className="fas fa-chart-pie w-5"></i>
             {!isCollapsed && <span>Dashboard</span>}
-          </a>
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          </Link>
+          <Link 
+            href="/ai-recommendations" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/ai-recommendations' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-ai-recommendations"
             title={isCollapsed ? "AI Recommendations" : ""}
           >
             <i className="fas fa-robot w-5"></i>
             {!isCollapsed && <span>AI Recommendations</span>}
-          </a>
+          </Link>
         </div>
 
         <div className="space-y-1 pt-4">
@@ -76,42 +86,58 @@ export function Sidebar() {
               Contracts
             </h3>
           )}
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          <Link 
+            href="/document-manager" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/document-manager' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-document-manager"
             title={isCollapsed ? "Document Manager" : ""}
           >
             <i className="fas fa-file-contract w-5"></i>
             {!isCollapsed && <span>Document Manager</span>}
-          </a>
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          </Link>
+          <Link 
+            href="/asc842-schedules" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/asc842-schedules' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-asc842"
             title={isCollapsed ? "ASC 842 Schedules" : ""}
           >
             <i className="fas fa-calculator w-5"></i>
             {!isCollapsed && <span>ASC 842 Schedules</span>}
-          </a>
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          </Link>
+          <Link 
+            href="/ifrs16-compliance" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/ifrs16-compliance' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-ifrs16"
             title={isCollapsed ? "IFRS 16 Compliance" : ""}
           >
             <i className="fas fa-chart-line w-5"></i>
             {!isCollapsed && <span>IFRS 16 Compliance</span>}
-          </a>
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          </Link>
+          <Link 
+            href="/journal-entries" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/journal-entries' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-journal-entries"
             title={isCollapsed ? "Journal Entries" : ""}
           >
             <i className="fas fa-book w-5"></i>
             {!isCollapsed && <span>Journal Entries</span>}
-          </a>
+          </Link>
         </div>
 
         <div className="space-y-1 pt-4">
@@ -120,15 +146,19 @@ export function Sidebar() {
               Settings
             </h3>
           )}
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          <Link 
+            href="/account-settings" 
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+              location === '/account-settings' 
+                ? 'bg-accent text-accent-foreground font-medium' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             data-testid="link-settings"
             title={isCollapsed ? "Account Settings" : ""}
           >
             <i className="fas fa-cog w-5"></i>
             {!isCollapsed && <span>Account Settings</span>}
-          </a>
+          </Link>
         </div>
       </nav>
 

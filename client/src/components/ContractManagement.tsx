@@ -3,8 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-export function ContractManagement() {
-  const [activeTab, setActiveTab] = useState("contracts");
+interface ContractManagementProps {
+  initialTab?: string;
+}
+
+export function ContractManagement({ initialTab = "contracts" }: ContractManagementProps = {}) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedContract, setSelectedContract] = useState<string | null>(null);
   const [scheduleParams, setScheduleParams] = useState({
     discountRate: 0.05,
