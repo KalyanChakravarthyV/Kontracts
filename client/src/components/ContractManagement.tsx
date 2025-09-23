@@ -286,6 +286,8 @@ export function ContractManagement() {
   }: any) {
     const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
     const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
+    const [selectedScheduleDetails, setSelectedScheduleDetails] = useState<any>(null);
+    const [showScheduleDetails, setShowScheduleDetails] = useState<boolean>(false);
 
     const { data: complianceSchedules } = useQuery({
       queryKey: ['/api/compliance-schedules'],
@@ -437,9 +439,9 @@ export function ContractManagement() {
                       <td className="py-2 px-2 font-medium" data-testid={`asc842-period-${index}`}>{item.period}</td>
                       <td className="py-2 px-2" data-testid={`asc842-date-${index}`}>{item.paymentDate}</td>
                       <td className="py-2 px-2" data-testid={`asc842-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>${item.interestExpense?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>${item.principalPayment?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${item.leaseLIABILITY?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${(item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-rou-value-${index}`}>${item.routAssetValue?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>${item.routAssetAmortization?.toLocaleString() || '0'}</td>
                       <td className="py-2 px-2" data-testid={`asc842-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
@@ -468,7 +470,24 @@ export function ContractManagement() {
                       <p className="text-sm text-muted-foreground">Created: {new Date(schedule.createdAt || Date.now()).toLocaleDateString()}</p>
                       <p className="text-sm text-muted-foreground">Present Value: ${parseFloat(schedule.presentValue || '0').toLocaleString()}</p>
                     </div>
-                    <button className="text-primary hover:text-primary/80 text-sm font-medium" data-testid={`button-view-schedule-${schedule.id}`}>
+                    <button 
+                      onClick={() => {
+                        try {
+                          const parsedScheduleData = JSON.parse(schedule.scheduleData || '[]');
+                          setSelectedScheduleDetails(parsedScheduleData);
+                          setShowScheduleDetails(true);
+                        } catch (error) {
+                          console.error('Error parsing schedule data:', error);
+                          toast({
+                            title: 'Error',
+                            description: 'Could not load schedule details',
+                            variant: 'destructive'
+                          });
+                        }
+                      }}
+                      className="text-primary hover:text-primary/80 text-sm font-medium" 
+                      data-testid={`button-view-schedule-${schedule.id}`}
+                    >
                       View Details
                     </button>
                   </div>
@@ -483,6 +502,82 @@ export function ContractManagement() {
             </div>
           )}
         </div>
+
+        {/* Schedule Details Modal */}
+        {showScheduleDetails && selectedScheduleDetails && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+            data-testid="schedule-details-modal"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowScheduleDetails(false);
+                setSelectedScheduleDetails(null);
+              }
+            }}
+          >
+            <div className="bg-card rounded-lg border border-border p-6 max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden relative">
+              <div className="flex items-center justify-between mb-4">
+                <h5 className="text-lg font-semibold">ASC 842 Schedule Details</h5>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowScheduleDetails(false);
+                    setSelectedScheduleDetails(null);
+                  }}
+                  className="text-muted-foreground hover:text-foreground p-2 rounded hover:bg-accent z-10 relative"
+                  data-testid="button-close-schedule-details"
+                  type="button"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+              
+              <div className="overflow-auto max-h-[70vh]">
+                <table className="w-full text-xs" data-testid="schedule-details-table">
+                  <thead className="sticky top-0 bg-card">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Payment Date</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Cumulative Amort.</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term Liability</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term Liability</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Amortized</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Accrued Interest</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Prepaid Rent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedScheduleDetails.map((item: any, index: number) => (
+                      <tr key={index} className="border-b border-border">
+                        <td className="py-2 px-2 font-medium" data-testid={`details-period-${index}`}>{item.period || (index + 1)}</td>
+                        <td className="py-2 px-2" data-testid={`details-date-${index}`}>{item.paymentDate}</td>
+                        <td className="py-2 px-2" data-testid={`details-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-liability-${index}`}>${(item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-rou-value-${index}`}>${item.routAssetValue?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-rou-amort-${index}`}>${item.routAssetAmortization?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-interest-amort-${index}`}>${item.interestAmortized?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-accrued-${index}`}>${item.accruedInterest?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-prepaid-${index}`}>${item.prepaidRent?.toLocaleString() || '0'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
