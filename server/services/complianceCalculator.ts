@@ -16,13 +16,19 @@ export interface ASC842Schedule {
 }
 
 export interface IFRS16Schedule {
-  period: string;
+  paymentDate: string;
+  period: number;
   leasePayment: number;
   interestExpense: number;
   principalReduction: number;
-  rightOfUseAsset: number;
-  leaseLIABILITY: number;
+  beginningLeaseLIABILITY: number;
+  endingLeaseLIABILITY: number;
+  currentLeaseLIABILITY: number;
+  nonCurrentLeaseLIABILITY: number;
+  beginningRightOfUseAsset: number;
   depreciationExpense: number;
+  endingRightOfUseAsset: number;
+  cumulativeDepreciation: number;
 }
 
 export function calculatePresentValue(
@@ -101,23 +107,58 @@ export function generateIFRS16Schedule(
   const schedule: IFRS16Schedule[] = [];
   let leaseLIABILITY = leaseAmount;
   let rightOfUseAsset = leaseAmount;
-  const monthlyDepreciation = leaseAmount / (leaseTerm * 12);
+  const annualDepreciation = leaseAmount / leaseTerm;
+  let cumulativeDepreciation = 0;
   
   for (let period = 1; period <= leaseTerm; period++) {
-    const interestExpense = leaseLIABILITY * (discountRate / 12);
+    const beginningLiability = leaseLIABILITY;
+    const beginningROU = rightOfUseAsset;
+    
+    // Calculate interest expense on beginning liability balance
+    const interestExpense = beginningLiability * discountRate;
     const principalReduction = annualPayment - interestExpense;
     
-    leaseLIABILITY = Math.max(0, leaseLIABILITY - principalReduction);
-    rightOfUseAsset = Math.max(0, rightOfUseAsset - (monthlyDepreciation * 12));
+    // Update lease liability after payment
+    leaseLIABILITY = Math.max(0, beginningLiability - principalReduction);
+    
+    // Calculate depreciation
+    const depreciationExpense = annualDepreciation;
+    cumulativeDepreciation += depreciationExpense;
+    rightOfUseAsset = Math.max(0, leaseAmount - cumulativeDepreciation);
+    
+    // Calculate current vs non-current liability split
+    // Current = next period's principal payment (if not final period)
+    let currentLiability = 0;
+    let nonCurrentLiability = leaseLIABILITY;
+    
+    if (period < leaseTerm && leaseLIABILITY > 0) {
+      const nextInterestExpense = leaseLIABILITY * discountRate;
+      const nextPrincipalPayment = Math.min(annualPayment - nextInterestExpense, leaseLIABILITY);
+      currentLiability = Math.max(0, nextPrincipalPayment);
+      nonCurrentLiability = Math.max(0, leaseLIABILITY - currentLiability);
+    } else if (period === leaseTerm) {
+      // In final period, remaining liability is current
+      currentLiability = leaseLIABILITY;
+      nonCurrentLiability = 0;
+    }
+    
+    const paymentDate = new Date();
+    paymentDate.setFullYear(paymentDate.getFullYear() + period);
     
     schedule.push({
-      period: `Year ${period}`,
+      paymentDate: paymentDate.toISOString().split('T')[0],
+      period,
       leasePayment: annualPayment,
       interestExpense: Math.round(interestExpense * 100) / 100,
       principalReduction: Math.round(principalReduction * 100) / 100,
-      rightOfUseAsset: Math.round(rightOfUseAsset * 100) / 100,
-      leaseLIABILITY: Math.round(leaseLIABILITY * 100) / 100,
-      depreciationExpense: Math.round(monthlyDepreciation * 12 * 100) / 100
+      beginningLeaseLIABILITY: Math.round(beginningLiability * 100) / 100,
+      endingLeaseLIABILITY: Math.round(leaseLIABILITY * 100) / 100,
+      currentLeaseLIABILITY: Math.round(currentLiability * 100) / 100,
+      nonCurrentLeaseLIABILITY: Math.round(nonCurrentLiability * 100) / 100,
+      beginningRightOfUseAsset: Math.round(beginningROU * 100) / 100,
+      depreciationExpense: Math.round(depreciationExpense * 100) / 100,
+      endingRightOfUseAsset: Math.round(rightOfUseAsset * 100) / 100,
+      cumulativeDepreciation: Math.round(cumulativeDepreciation * 100) / 100
     });
   }
   
