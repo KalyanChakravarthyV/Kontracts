@@ -1,5 +1,7 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, payments, aiRecommendations } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -281,4 +283,159 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getContracts(userId: string): Promise<Contract[]> {
+    return await db.select().from(contracts).where(eq(contracts.userId, userId));
+  }
+
+  async getContract(id: string): Promise<Contract | undefined> {
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, id));
+    return contract || undefined;
+  }
+
+  async createContract(insertContract: InsertContract): Promise<Contract> {
+    const [contract] = await db
+      .insert(contracts)
+      .values(insertContract)
+      .returning();
+    return contract;
+  }
+
+  async updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined> {
+    const [updatedContract] = await db
+      .update(contracts)
+      .set(updates)
+      .where(eq(contracts.id, id))
+      .returning();
+    return updatedContract || undefined;
+  }
+
+  async getDocuments(userId: string): Promise<Document[]> {
+    return await db.select().from(documents).where(eq(documents.userId, userId));
+  }
+
+  async getDocument(id: string): Promise<Document | undefined> {
+    const [document] = await db.select().from(documents).where(eq(documents.id, id));
+    return document || undefined;
+  }
+
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const [document] = await db
+      .insert(documents)
+      .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateDocument(id: string, updates: Partial<Document>): Promise<Document | undefined> {
+    const [updatedDocument] = await db
+      .update(documents)
+      .set(updates)
+      .where(eq(documents.id, id))
+      .returning();
+    return updatedDocument || undefined;
+  }
+
+  async getComplianceSchedules(contractId: string): Promise<ComplianceSchedule[]> {
+    return await db.select().from(complianceSchedules).where(eq(complianceSchedules.contractId, contractId));
+  }
+
+  async getAllComplianceSchedules(userId: string): Promise<ComplianceSchedule[]> {
+    // Join with contracts to filter by user
+    return await db
+      .select({
+        id: complianceSchedules.id,
+        contractId: complianceSchedules.contractId,
+        type: complianceSchedules.type,
+        scheduleData: complianceSchedules.scheduleData,
+        presentValue: complianceSchedules.presentValue,
+        discountRate: complianceSchedules.discountRate,
+        createdAt: complianceSchedules.createdAt
+      })
+      .from(complianceSchedules)
+      .innerJoin(contracts, eq(complianceSchedules.contractId, contracts.id))
+      .where(eq(contracts.userId, userId));
+  }
+
+  async createComplianceSchedule(insertSchedule: InsertComplianceSchedule): Promise<ComplianceSchedule> {
+    const [schedule] = await db
+      .insert(complianceSchedules)
+      .values(insertSchedule)
+      .returning();
+    return schedule;
+  }
+
+  async getJournalEntries(contractId: string): Promise<JournalEntry[]> {
+    return await db.select().from(journalEntries).where(eq(journalEntries.contractId, contractId));
+  }
+
+  async getAllJournalEntries(userId: string): Promise<JournalEntry[]> {
+    return await db.select().from(journalEntries).where(eq(journalEntries.userId, userId));
+  }
+
+  async createJournalEntry(insertEntry: InsertJournalEntry): Promise<JournalEntry> {
+    const [entry] = await db
+      .insert(journalEntries)
+      .values(insertEntry)
+      .returning();
+    return entry;
+  }
+
+  async getPayments(userId: string): Promise<Payment[]> {
+    return await db.select().from(payments).where(eq(payments.userId, userId));
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const [payment] = await db
+      .insert(payments)
+      .values(insertPayment)
+      .returning();
+    return payment;
+  }
+
+  async markPaymentPaid(paymentId: string): Promise<Payment | undefined> {
+    const [updatedPayment] = await db
+      .update(payments)
+      .set({ 
+        status: 'Paid',
+        paidDate: new Date()
+      })
+      .where(eq(payments.id, paymentId))
+      .returning();
+    return updatedPayment || undefined;
+  }
+
+  async getAIRecommendations(userId: string): Promise<AIRecommendation[]> {
+    return await db.select().from(aiRecommendations).where(eq(aiRecommendations.userId, userId));
+  }
+
+  async createAIRecommendation(insertRecommendation: InsertAIRecommendation): Promise<AIRecommendation> {
+    const [recommendation] = await db
+      .insert(aiRecommendations)
+      .values(insertRecommendation)
+      .returning();
+    return recommendation;
+  }
+}
+
+// Create database storage instance
+export const storage = new DatabaseStorage();
