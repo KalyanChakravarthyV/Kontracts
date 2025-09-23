@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface ContractManagementProps {
   initialTab?: string;
@@ -122,6 +123,13 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
 
   // Payment Schedule View Component
   function PaymentScheduleView({ contracts }: { contracts: any[] }) {
+    const [editingPayment, setEditingPayment] = useState<any | null>(null);
+    const [editForm, setEditForm] = useState({
+      amount: '',
+      dueDate: '',
+      status: ''
+    });
+
     const { data: payments, isLoading: paymentsLoading } = useQuery({
       queryKey: ['/api/payments'],
     });
@@ -145,6 +153,52 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
         });
       },
     });
+
+    const updatePaymentMutation = useMutation({
+      mutationFn: async ({ paymentId, updates }: { paymentId: string; updates: any }) => {
+        return await apiRequest('PUT', `/api/payments/${paymentId}`, updates);
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Payment updated successfully',
+          description: 'The payment details have been updated.',
+        });
+        // Invalidate payments query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['/api/payments'] });
+        setEditingPayment(null);
+      },
+      onError: (error: any) => {
+        toast({
+          title: 'Failed to update payment',
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
+    });
+
+    const handleEditPayment = (payment: any) => {
+      setEditingPayment(payment);
+      setEditForm({
+        amount: payment.amount,
+        dueDate: new Date(payment.dueDate).toISOString().split('T')[0],
+        status: payment.status
+      });
+    };
+
+    const handleSavePayment = () => {
+      if (!editingPayment) return;
+      
+      const updates = {
+        amount: editForm.amount,
+        dueDate: new Date(editForm.dueDate).toISOString(),
+        status: editForm.status
+      };
+      
+      updatePaymentMutation.mutate({
+        paymentId: editingPayment.id,
+        updates
+      });
+    };
 
     // Get contract info for display
     const enrichedPayments = payments?.map((payment: any) => {
@@ -249,18 +303,27 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      {payment.status !== 'Paid' ? (
+                      <div className="flex items-center justify-end space-x-2">
                         <button 
-                          onClick={() => markPaidMutation.mutate(payment.id)}
-                          disabled={markPaidMutation.isPending}
-                          className="text-primary hover:text-primary/80 text-sm font-medium disabled:opacity-50" 
-                          data-testid={`button-mark-paid-${payment.id}`}
+                          onClick={() => handleEditPayment(payment)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium" 
+                          data-testid={`button-edit-${payment.id}`}
                         >
-                          {markPaidMutation.isPending ? 'Updating...' : 'Mark as Paid'}
+                          Edit
                         </button>
-                      ) : (
-                        <span className="text-green-600 text-sm font-medium">Paid</span>
-                      )}
+                        {payment.status !== 'Paid' ? (
+                          <button 
+                            onClick={() => markPaidMutation.mutate(payment.id)}
+                            disabled={markPaidMutation.isPending}
+                            className="text-primary hover:text-primary/80 text-sm font-medium disabled:opacity-50" 
+                            data-testid={`button-mark-paid-${payment.id}`}
+                          >
+                            {markPaidMutation.isPending ? 'Updating...' : 'Mark as Paid'}
+                          </button>
+                        ) : (
+                          <span className="text-green-600 text-sm font-medium">Paid</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -278,6 +341,72 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
             </tbody>
           </table>
         </div>
+
+        {/* Edit Payment Dialog */}
+        <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Payment</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
+                  data-testid="input-edit-amount"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={editForm.dueDate}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                  data-testid="input-edit-due-date"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={editForm.status} onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger data-testid="select-edit-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Scheduled">Scheduled</SelectItem>
+                    <SelectItem value="Due">Due</SelectItem>
+                    <SelectItem value="Overdue">Overdue</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setEditingPayment(null)}
+                data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSavePayment}
+                disabled={updatePaymentMutation.isPending}
+                data-testid="button-save-payment"
+              >
+                {updatePaymentMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

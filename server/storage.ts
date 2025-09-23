@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, payments, aiRecommendations } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type UpdatePayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, payments, aiRecommendations } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -34,6 +34,7 @@ export interface IStorage {
   // Payments
   getPayments(userId: string): Promise<Payment[]>;
   createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePayment(paymentId: string, updates: UpdatePayment): Promise<Payment | undefined>;
   markPaymentPaid(paymentId: string): Promise<Payment | undefined>;
   
   
@@ -248,6 +249,24 @@ export class MemStorage implements IStorage {
     return payment;
   }
 
+  async updatePayment(paymentId: string, updates: UpdatePayment): Promise<Payment | undefined> {
+    const payment = this.payments.get(paymentId);
+    if (payment) {
+      const updatedPayment = {
+        ...payment,
+        ...updates,
+        // Preserve core fields that shouldn't be updated
+        id: payment.id,
+        contractId: payment.contractId,
+        userId: payment.userId,
+        createdAt: payment.createdAt
+      };
+      this.payments.set(paymentId, updatedPayment);
+      return updatedPayment;
+    }
+    return undefined;
+  }
+
   async markPaymentPaid(paymentId: string): Promise<Payment | undefined> {
     const payment = this.payments.get(paymentId);
     if (payment) {
@@ -410,6 +429,15 @@ export class DatabaseStorage implements IStorage {
       .values(insertPayment)
       .returning();
     return payment;
+  }
+
+  async updatePayment(paymentId: string, updates: UpdatePayment): Promise<Payment | undefined> {
+    const [updatedPayment] = await db
+      .update(payments)
+      .set(updates)
+      .where(eq(payments.id, paymentId))
+      .returning();
+    return updatedPayment || undefined;
   }
 
   async markPaymentPaid(paymentId: string): Promise<Payment | undefined> {

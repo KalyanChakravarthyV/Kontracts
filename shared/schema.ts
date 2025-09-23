@@ -119,6 +119,15 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({
   paidDate: true,
 });
 
+export const updatePaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  contractId: true,
+  userId: true,
+  createdAt: true,
+}).partial().extend({
+  dueDate: z.string().optional().transform((dateStr) => dateStr ? new Date(dateStr) : undefined)
+});
+
 export const insertAIRecommendationSchema = createInsertSchema(aiRecommendations).omit({
   id: true,
   createdAt: true,
@@ -141,6 +150,7 @@ export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
 export type JournalEntry = typeof journalEntries.$inferSelect;
 
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type UpdatePayment = z.infer<typeof updatePaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
 
 
