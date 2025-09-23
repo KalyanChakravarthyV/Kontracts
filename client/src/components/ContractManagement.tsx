@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface ContractManagementProps {
   initialTab?: string;
@@ -233,7 +237,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                     <td className="py-4 px-4 font-medium" data-testid={`text-payment-contract-${payment.id}`}>{payment.contractName}</td>
                     <td className="py-4 px-4 text-muted-foreground" data-testid={`text-payment-vendor-${payment.id}`}>{payment.vendor}</td>
                     <td className="py-4 px-4" data-testid={`text-payment-due-${payment.id}`}>{payment.dueDate.toLocaleDateString()}</td>
-                    <td className="py-4 px-4 font-medium" data-testid={`text-payment-amount-${payment.id}`}>${parseFloat(payment.amount).toLocaleString()}</td>
+                    <td className="py-4 px-4 font-medium" data-testid={`text-payment-amount-${payment.id}`}>{`$${parseFloat(payment.amount).toLocaleString()}`}</td>
                     <td className="py-4 px-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         payment.status === 'Paid' ? 'bg-green-100 text-green-800' :
@@ -427,15 +431,14 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Begin Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">End Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Begin RoU Asset</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">End RoU Asset</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Cumulative Amort.</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term Liability</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term Liability</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Amortized</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Accrued Interest</th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Prepaid Rent</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -443,18 +446,17 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                     <tr key={index} className="border-b border-border">
                       <td className="py-2 px-2 font-medium" data-testid={`asc842-period-${index}`}>{item.period}</td>
                       <td className="py-2 px-2" data-testid={`asc842-date-${index}`}>{item.paymentDate}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${(item.leaseLiability || item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-rou-value-${index}`}>${(item.rouAssetValue || item.routAssetValue)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-interest-amort-${index}`}>${item.interestAmortized?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-accrued-${index}`}>${item.accruedInterest?.toLocaleString() || '0'}</td>
-                      <td className="py-2 px-2" data-testid={`asc842-prepaid-${index}`}>${item.prepaidRent?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-payment-${index}`}>{`$${item.leasePayment?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>{`$${(item.interestExpense || item.interest)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>{`$${(item.principalPayment || item.principal)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-begin-liability-${index}`}>{`$${(item.beginningLeaseLiability || item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-end-liability-${index}`}>{`$${(item.endingLeaseLiability || item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-short-term-${index}`}>{`$${item.shortTermLiability?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-long-term-${index}`}>{`$${item.longTermLiability?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-begin-rou-${index}`}>{`$${(item.beginningRouAsset || item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>{`$${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-end-rou-${index}`}>{`$${(item.endingRouAsset || item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-cumul-amort-${index}`}>{`$${item.cumulativeAmortization?.toLocaleString() || '0'}`}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -473,7 +475,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                     <div>
                       <p className="font-medium">Schedule #{schedule.id}</p>
                       <p className="text-sm text-muted-foreground">Created: {new Date(schedule.createdAt || Date.now()).toLocaleDateString()}</p>
-                      <p className="text-sm text-muted-foreground">Present Value: ${parseFloat(schedule.presentValue || '0').toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Present Value: {`$${parseFloat(schedule.presentValue || '0').toLocaleString()}`}</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -589,15 +591,14 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Begin Liability</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">End Liability</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Begin RoU Asset</th>
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">End RoU Asset</th>
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Cumulative Amort.</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term Liability</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term Liability</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Amortized</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Accrued Interest</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Prepaid Rent</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -605,18 +606,17 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                       <tr key={index} className="border-b border-border">
                         <td className="py-2 px-2 font-medium" data-testid={`details-period-${index}`}>{item.period || (index + 1)}</td>
                         <td className="py-2 px-2" data-testid={`details-date-${index}`}>{item.paymentDate}</td>
-                        <td className="py-2 px-2" data-testid={`details-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-interest-${index}`}>${(item.interestExpense || item.interest)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-principal-${index}`}>${(item.principalPayment || item.principal)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-liability-${index}`}>${(item.leaseLiability || item.leaseLIABILITY || item.remainingBalance)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-rou-value-${index}`}>${(item.rouAssetValue || item.routAssetValue)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-rou-amort-${index}`}>${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-interest-amort-${index}`}>${item.interestAmortized?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-accrued-${index}`}>${item.accruedInterest?.toLocaleString() || '0'}</td>
-                        <td className="py-2 px-2" data-testid={`details-prepaid-${index}`}>${item.prepaidRent?.toLocaleString() || '0'}</td>
+                        <td className="py-2 px-2" data-testid={`details-payment-${index}`}>{`$${item.leasePayment?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-interest-${index}`}>{`$${(item.interestExpense || item.interest)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-principal-${index}`}>{`$${(item.principalPayment || item.principal)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-begin-liability-${index}`}>{`$${(item.beginningLeaseLiability || item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-end-liability-${index}`}>{`$${(item.endingLeaseLiability || item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-short-term-${index}`}>{`$${item.shortTermLiability?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-long-term-${index}`}>{`$${item.longTermLiability?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-begin-rou-${index}`}>{`$${(item.beginningRouAsset || item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-rou-amort-${index}`}>{`$${(item.rouAssetAmortization || item.routAssetAmortization)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-end-rou-${index}`}>{`$${(item.endingRouAsset || item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                        <td className="py-2 px-2" data-testid={`details-cumul-amort-${index}`}>{`$${item.cumulativeAmortization?.toLocaleString() || '0'}`}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -631,42 +631,269 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
 
   // IFRS 16 View Component
   function IFRS16View({ contracts, onGenerateSchedule, isGenerating }: any) {
+    const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
+    const [scheduleParams, setScheduleParams] = useState({
+      leaseAmount: '',
+      leaseTerm: '',
+      interestRate: '',
+      paymentFrequency: 'monthly',
+      startDate: new Date().toISOString().split('T')[0]
+    });
+    const [generatedSchedule, setGeneratedSchedule] = useState<any[]>([]);
+    const [selectedScheduleDetails, setSelectedScheduleDetails] = useState<any[]>([]);
+    const [complianceSchedules, setComplianceSchedules] = useState<any[]>([]);
+    
+    // Load existing IFRS 16 schedules
+    const { data: allSchedules } = useQuery({
+      queryKey: ['/api/compliance-schedules'],
+    });
+    
+    useEffect(() => {
+      if (allSchedules) {
+        setComplianceSchedules(allSchedules.filter((schedule: any) => schedule.type === 'IFRS16'));
+      }
+    }, [allSchedules]);
+
+    const complianceScheduleMutation = useMutation({
+      mutationFn: async ({ contractId, params }: any) => {
+        return await apiRequest('POST', `/api/contracts/${contractId}/compliance/IFRS16`, params);
+      },
+      onSuccess: (data: any) => {
+        setGeneratedSchedule(data.schedule || []);
+        toast({
+          title: "IFRS 16 Schedule Generated",
+          description: `The schedule has been created with ${data.paymentsCreated || 0} payment records.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/compliance-schedules'] });
+      },
+      onError: (error: Error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to generate IFRS 16 schedule",
+          variant: "destructive"
+        });
+      }
+    });
+
+    const handleGenerateSchedule = () => {
+      if (!selectedContractForSchedule) return;
+      complianceScheduleMutation.mutate({ contractId: selectedContractForSchedule, params: scheduleParams });
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h4 className="text-lg font-semibold">IFRS 16 Compliance</h4>
         </div>
         
-        <div className="bg-accent/50 rounded-lg p-6 border border-border">
-          <div className="text-center">
-            <i className="fas fa-globe text-4xl text-muted-foreground mb-4"></i>
-            <h5 className="text-lg font-semibold mb-2">IFRS 16 Implementation</h5>
-            <p className="text-muted-foreground mb-4">
-              International Financial Reporting Standards for lease accounting. 
-              Similar to ASC 842 but with some key differences in measurement and presentation.
-            </p>
-            <div className="space-y-3">
-              {contracts?.map((contract: any) => (
-                <div key={contract.id} className="flex items-center justify-between bg-background rounded-lg p-4">
-                  <div>
-                    <p className="font-medium">{contract.name}</p>
-                    <p className="text-sm text-muted-foreground">{contract.vendor}</p>
-                  </div>
-                  <button 
-                    onClick={() => onGenerateSchedule(contract.id)}
-                    disabled={isGenerating}
-                    className="px-3 py-1 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-                    data-testid={`button-ifrs16-${contract.id}`}
-                  >
-                    Generate IFRS 16
-                  </button>
-                </div>
-              )) || (
-                <p className="text-muted-foreground">No contracts available for IFRS 16 compliance</p>
-              )}
+        {/* Schedule Generation Interface */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h5 className="text-md font-semibold mb-4">Generate New IFRS 16 Schedule</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="ifrs16-contract">Select Contract</Label>
+              <Select value={selectedContractForSchedule} onValueChange={setSelectedContractForSchedule}>
+                <SelectTrigger data-testid="select-ifrs16-contract">
+                  <SelectValue placeholder="Choose a contract" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contracts?.map((contract: any) => (
+                    <SelectItem key={contract.id} value={contract.id}>
+                      {contract.name} - {contract.vendor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="ifrs16-amount">Lease Amount</Label>
+              <Input 
+                id="ifrs16-amount"
+                value={scheduleParams.leaseAmount}
+                onChange={(e) => setScheduleParams({...scheduleParams, leaseAmount: e.target.value})}
+                placeholder="Enter total lease amount"
+                data-testid="input-ifrs16-amount"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ifrs16-term">Lease Term (months)</Label>
+              <Input 
+                id="ifrs16-term"
+                value={scheduleParams.leaseTerm}
+                onChange={(e) => setScheduleParams({...scheduleParams, leaseTerm: e.target.value})}
+                placeholder="Enter lease term"
+                data-testid="input-ifrs16-term"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ifrs16-rate">Interest Rate (%)</Label>
+              <Input 
+                id="ifrs16-rate"
+                value={scheduleParams.interestRate}
+                onChange={(e) => setScheduleParams({...scheduleParams, interestRate: e.target.value})}
+                placeholder="Enter interest rate"
+                data-testid="input-ifrs16-rate"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ifrs16-frequency">Payment Frequency</Label>
+              <Select value={scheduleParams.paymentFrequency} onValueChange={(value) => setScheduleParams({...scheduleParams, paymentFrequency: value})}>
+                <SelectTrigger data-testid="select-ifrs16-frequency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="annual">Annual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="ifrs16-start">Start Date</Label>
+              <Input 
+                id="ifrs16-start"
+                type="date"
+                value={scheduleParams.startDate}
+                onChange={(e) => setScheduleParams({...scheduleParams, startDate: e.target.value})}
+                data-testid="input-ifrs16-start"
+              />
             </div>
           </div>
+          <div className="mt-4">
+            <Button 
+              onClick={handleGenerateSchedule}
+              disabled={!selectedContractForSchedule || complianceScheduleMutation.isPending}
+              className="w-full"
+              data-testid="button-generate-ifrs16"
+            >
+              {complianceScheduleMutation.isPending ? 'Generating...' : 'Generate IFRS 16 Schedule'}
+            </Button>
+          </div>
         </div>
+
+        {/* Generated Schedule Preview */}
+        {generatedSchedule.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h5 className="text-md font-semibold mb-4">Generated IFRS 16 Schedule</h5>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Payment Date</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {generatedSchedule.map((item: any, index: number) => (
+                    <tr key={index} className="border-b border-border">
+                      <td className="py-2 px-2 font-medium" data-testid={`ifrs16-period-${index}`}>{item.period}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-date-${index}`}>{item.paymentDate}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-payment-${index}`}>{`$${item.leasePayment?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-interest-${index}`}>{`$${(item.interestExpense || item.interest)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-principal-${index}`}>{`$${(item.principalPayment || item.principal)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-liability-${index}`}>{`$${(item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-rou-asset-${index}`}>{`$${(item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-rou-amort-${index}`}>{`$${(item.routAssetAmortization)?.toLocaleString() || '0'}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Existing IFRS 16 Schedules */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h5 className="text-md font-semibold mb-4">Existing IFRS 16 Schedules</h5>
+          {complianceSchedules && complianceSchedules.length > 0 ? (
+            <div className="space-y-4">
+              {complianceSchedules.map((schedule: any) => (
+                <div key={schedule.id} className="border border-border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Schedule #{schedule.id}</p>
+                      <p className="text-sm text-muted-foreground">Created: {new Date(schedule.createdAt || Date.now()).toLocaleDateString()}</p>
+                      <p className="text-sm text-muted-foreground">Present Value: {`$${parseFloat(schedule.presentValue || '0').toLocaleString()}`}</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        try {
+                          const scheduleData = JSON.parse(schedule.scheduleData || '[]');
+                          setSelectedScheduleDetails(scheduleData);
+                        } catch (e) {
+                          console.error('Failed to parse schedule data:', e);
+                          toast({
+                            title: "Error",
+                            description: "Failed to load schedule details",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                      className="px-3 py-1 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                      data-testid={`button-view-ifrs16-schedule-${schedule.id}`}
+                    >
+                      View Schedule
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No IFRS 16 schedules have been generated yet.</p>
+          )}
+        </div>
+
+        {/* Schedule Details Modal */}
+        {selectedScheduleDetails.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h5 className="text-md font-semibold">IFRS 16 Schedule Details</h5>
+              <button 
+                onClick={() => setSelectedScheduleDetails([])}
+                className="text-muted-foreground hover:text-foreground"
+                data-testid="button-close-ifrs16-details"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Payment Date</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedScheduleDetails.map((item: any, index: number) => (
+                    <tr key={index} className="border-b border-border">
+                      <td className="py-2 px-2 font-medium" data-testid={`ifrs16-details-period-${index}`}>{item.period || (index + 1)}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-date-${index}`}>{item.paymentDate}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-payment-${index}`}>{`$${item.leasePayment?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-interest-${index}`}>{`$${(item.interestExpense || item.interest)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-principal-${index}`}>{`$${(item.principalPayment || item.principal)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-liability-${index}`}>{`$${(item.leaseLiability)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-rou-asset-${index}`}>{`$${(item.rouAssetValue)?.toLocaleString() || '0'}`}</td>
+                      <td className="py-2 px-2" data-testid={`ifrs16-details-rou-amort-${index}`}>{`$${(item.routAssetAmortization)?.toLocaleString() || '0'}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -694,7 +921,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                 <div key={contract.id} className="flex items-center justify-between border border-border rounded-lg p-3">
                   <div>
                     <p className="font-medium text-sm">{contract.name}</p>
-                    <p className="text-xs text-muted-foreground">{contract.vendor} - ${parseFloat(contract.amount).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{contract.vendor} - {`$${parseFloat(contract.amount).toLocaleString()}`}</p>
                   </div>
                   <button 
                     onClick={() => onGenerateJournal(contract.id, 'ASC842')}
@@ -723,7 +950,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                     </div>
                     <div className="text-xs text-muted-foreground">
                       <p>Debit: {entry.debitAccount} | Credit: {entry.creditAccount}</p>
-                      <p className="font-medium">${parseFloat(entry.amount).toLocaleString()}</p>
+                      <p className="font-medium">{`$${parseFloat(entry.amount).toLocaleString()}`}</p>
                     </div>
                   </div>
                 ))}
