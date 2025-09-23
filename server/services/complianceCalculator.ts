@@ -4,15 +4,14 @@ export interface ASC842Schedule {
   leasePayment: number;
   interestExpense: number;
   principalPayment: number;
-  leaseLiability: number;
-  rouAssetValue: number;
-  rouAssetAmortization: number;
-  cumulativeAmortization: number;
+  beginningLeaseLiability: number;
+  endingLeaseLiability: number;
   shortTermLiability: number;
   longTermLiability: number;
-  interestAmortized: number;
-  accruedInterest: number;
-  prepaidRent: number;
+  beginningRouAsset: number;
+  rouAssetAmortization: number;
+  endingRouAsset: number;
+  cumulativeAmortization: number;
 }
 
 export interface IFRS16Schedule {
@@ -53,26 +52,38 @@ export function generateASC842Schedule(
   let rouAssetValue = leaseAmount;
   const annualAmortization = leaseAmount / leaseTerm;
   let cumulativeAmortization = 0;
-  let interestAmortized = 0;
   
   for (let period = 1; period <= leaseTerm; period++) {
-    const interestExpense = leaseLiability * discountRate;
+    const beginningLiability = leaseLiability;
+    const beginningRouAsset = rouAssetValue;
+    
+    // Calculate interest expense on beginning liability balance
+    const interestExpense = beginningLiability * discountRate;
     const principalPayment = annualPayment - interestExpense;
     
-    // Calculate next period's principal payment for ST/LT liability split
-    const nextPeriodLiability = Math.max(0, leaseLiability - principalPayment);
-    const nextInterestExpense = nextPeriodLiability * discountRate;
-    const nextPrincipalPayment = period < leaseTerm ? annualPayment - nextInterestExpense : 0;
+    // Update lease liability after payment
+    leaseLiability = Math.max(0, beginningLiability - principalPayment);
     
-    // Update balances after payment
-    leaseLiability = nextPeriodLiability;
-    cumulativeAmortization += annualAmortization;
+    // Calculate ROU asset amortization
+    const rouAssetAmortization = annualAmortization;
+    cumulativeAmortization += rouAssetAmortization;
     rouAssetValue = Math.max(0, leaseAmount - cumulativeAmortization);
-    interestAmortized += interestExpense;
     
-    // Calculate short-term vs long-term liability (ST = next period's principal payment)
-    const shortTermLiability = Math.round(nextPrincipalPayment * 100) / 100;
-    const longTermLiability = Math.round((nextPeriodLiability - nextPrincipalPayment) * 100) / 100;
+    // Calculate short-term vs long-term liability split
+    // Short-term = portion due within 12 months (next period's principal)
+    let shortTermLiability = 0;
+    let longTermLiability = leaseLiability;
+    
+    if (period < leaseTerm && leaseLiability > 0) {
+      const nextInterestExpense = leaseLiability * discountRate;
+      const nextPrincipalPayment = Math.min(annualPayment - nextInterestExpense, leaseLiability);
+      shortTermLiability = Math.max(0, nextPrincipalPayment);
+      longTermLiability = Math.max(0, leaseLiability - shortTermLiability);
+    } else if (period === leaseTerm) {
+      // In final period, remaining liability is short-term
+      shortTermLiability = leaseLiability;
+      longTermLiability = 0;
+    }
     
     const paymentDate = new Date();
     paymentDate.setFullYear(paymentDate.getFullYear() + period);
@@ -83,15 +94,14 @@ export function generateASC842Schedule(
       leasePayment: annualPayment,
       interestExpense: Math.round(interestExpense * 100) / 100,
       principalPayment: Math.round(principalPayment * 100) / 100,
-      leaseLiability: Math.round(leaseLiability * 100) / 100,
-      rouAssetValue: Math.round(rouAssetValue * 100) / 100,
-      rouAssetAmortization: Math.round(annualAmortization * 100) / 100,
-      cumulativeAmortization: Math.round(cumulativeAmortization * 100) / 100,
-      shortTermLiability: Math.max(0, shortTermLiability),
-      longTermLiability: Math.max(0, longTermLiability),
-      interestAmortized: Math.round(interestAmortized * 100) / 100,
-      accruedInterest: 0, // Zero for end-of-period annual payments
-      prepaidRent: 0 // Zero under ASC 842 for operating leases
+      beginningLeaseLiability: Math.round(beginningLiability * 100) / 100,
+      endingLeaseLiability: Math.round(leaseLiability * 100) / 100,
+      shortTermLiability: Math.round(shortTermLiability * 100) / 100,
+      longTermLiability: Math.round(longTermLiability * 100) / 100,
+      beginningRouAsset: Math.round(beginningRouAsset * 100) / 100,
+      rouAssetAmortization: Math.round(rouAssetAmortization * 100) / 100,
+      endingRouAsset: Math.round(rouAssetValue * 100) / 100,
+      cumulativeAmortization: Math.round(cumulativeAmortization * 100) / 100
     });
   }
   
