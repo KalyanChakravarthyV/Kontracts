@@ -236,7 +236,7 @@ export function PetFriendlyTravel() {
                       data-testid={`pet-info-${pet.id}`}
                     >
                       <div className="bg-primary text-primary-foreground rounded-full p-2">
-                        <i className={pet.species === 'dog' ? 'fas fa-dog' : pet.species === 'cat' ? 'fas fa-cat' : 'fas fa-paw'} className="text-sm"></i>
+                        <i className={`text-sm ${pet.species === 'dog' ? 'fas fa-dog' : pet.species === 'cat' ? 'fas fa-cat' : 'fas fa-paw'}`}></i>
                       </div>
                       <div>
                         <p className="text-sm font-medium" data-testid={`text-pet-name-${pet.id}`}>

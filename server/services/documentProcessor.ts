@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { extractContractData } from './openai.js';
 
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
+  destination: async (req: any, file: any, cb: any) => {
     const uploadDir = path.join(process.cwd(), 'uploads');
     try {
       await fs.mkdir(uploadDir, { recursive: true });
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
       cb(error, '');
     }
   },
-  filename: (req, file, cb) => {
+  filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
@@ -24,7 +24,7 @@ export const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -62,7 +62,7 @@ export async function processDocument(filePath: string, mimeType: string): Promi
 
     return extractedText;
   } catch (error) {
-    throw new Error(`Failed to process document: ${error.message}`);
+    throw new Error(`Failed to process document: ${(error as Error).message}`);
   }
 }
 
@@ -81,7 +81,7 @@ export async function extractAndProcessContract(filePath: string, mimeType: stri
       extractedText: '',
       contractData: null,
       processingStatus: 'failed',
-      error: error.message
+      error: (error as Error).message
     };
   }
 }

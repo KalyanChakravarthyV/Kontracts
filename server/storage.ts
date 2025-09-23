@@ -121,7 +121,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser,
+      id,
+      role: insertUser.role || "Contract Administrator"
+    };
     this.users.set(id, user);
     return user;
   }
@@ -139,6 +143,7 @@ export class MemStorage implements IStorage {
     const contract: Contract = { 
       ...insertContract, 
       id,
+      documentId: insertContract.documentId || null,
       createdAt: new Date()
     };
     this.contracts.set(id, contract);
@@ -167,6 +172,8 @@ export class MemStorage implements IStorage {
     const document: Document = { 
       ...insertDocument, 
       id,
+      extractedData: insertDocument.extractedData || null,
+      processingStatus: insertDocument.processingStatus || "pending",
       uploadedAt: new Date()
     };
     this.documents.set(id, document);
@@ -191,6 +198,8 @@ export class MemStorage implements IStorage {
     const schedule: ComplianceSchedule = { 
       ...insertSchedule, 
       id,
+      presentValue: insertSchedule.presentValue || null,
+      discountRate: insertSchedule.discountRate || null,
       createdAt: new Date()
     };
     this.complianceSchedules.set(id, schedule);
@@ -206,6 +215,7 @@ export class MemStorage implements IStorage {
     const entry: JournalEntry = { 
       ...insertEntry, 
       id,
+      reference: insertEntry.reference || null,
       createdAt: new Date()
     };
     this.journalEntries.set(id, entry);
@@ -231,6 +241,12 @@ export class MemStorage implements IStorage {
     const place: PetFriendlyPlace = { 
       ...insertPlace, 
       id,
+      description: insertPlace.description || null,
+      rating: insertPlace.rating || null,
+      priceRange: insertPlace.priceRange || null,
+      amenities: insertPlace.amenities || null,
+      coordinates: insertPlace.coordinates || null,
+      imageUrl: insertPlace.imageUrl || null,
       createdAt: new Date()
     };
     this.petFriendlyPlaces.set(id, place);
@@ -246,6 +262,9 @@ export class MemStorage implements IStorage {
     const pet: UserPet = { 
       ...insertPet, 
       id,
+      breed: insertPet.breed || null,
+      age: insertPet.age || null,
+      specialRequirements: insertPet.specialRequirements || null,
       createdAt: new Date()
     };
     this.userPets.set(id, pet);
@@ -261,6 +280,9 @@ export class MemStorage implements IStorage {
     const recommendation: AIRecommendation = { 
       ...insertRecommendation, 
       id,
+      actionUrl: insertRecommendation.actionUrl || null,
+      priority: insertRecommendation.priority || "medium",
+      isRead: insertRecommendation.isRead || false,
       createdAt: new Date()
     };
     this.aiRecommendations.set(id, recommendation);

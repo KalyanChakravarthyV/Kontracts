@@ -1,10 +1,11 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { upload, extractAndProcessContract } from "./services/documentProcessor.js";
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
 import { generateAIRecommendations, analyzePetFriendlyPlaces } from "./services/openai.js";
 import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema } from "@shared/schema";
+import type { MulterRequest } from "./types/multer.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -28,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         complianceScore: 98
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -39,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contracts = await storage.getContracts(userId);
       res.json(contracts);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -50,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contract = await storage.createContract(validated);
       res.status(201).json(contract);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ message: (error as Error).message });
     }
   });
 
@@ -62,12 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(contract);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
   // Document upload and processing
-  app.post("/api/documents/upload", upload.single('document'), async (req, res) => {
+  app.post("/api/documents/upload", upload.single('document'), async (req: MulterRequest, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -119,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processingResult
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -129,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documents = await storage.getDocuments(userId);
       res.json(documents);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -183,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         presentValue
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -192,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schedules = await storage.getComplianceSchedules(req.params.contractId);
       res.json(schedules);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -226,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(journalEntries);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -235,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entries = await storage.getJournalEntries(req.params.contractId);
       res.json(entries);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -249,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json(places);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -281,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingPlaces = await storage.getPetFriendlyPlaces();
       res.json(existingPlaces);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -292,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pets = await storage.getUserPets(userId);
       res.json(pets);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -302,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pet = await storage.createUserPet(petData);
       res.status(201).json(pet);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ message: (error as Error).message });
     }
   });
 
@@ -342,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const storedRecommendations = await storage.getAIRecommendations(userId);
       res.json(storedRecommendations);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
@@ -357,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userProfile } = user;
       res.json(userProfile);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 

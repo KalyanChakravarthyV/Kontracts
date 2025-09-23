@@ -55,7 +55,7 @@ export async function extractContractData(documentText: string): Promise<Contrac
       description: result.description || 'Contract details extracted from document'
     };
   } catch (error) {
-    throw new Error(`Failed to extract contract data: ${error.message}`);
+    throw new Error(`Failed to extract contract data: ${(error as Error).message}`);
   }
 }
 
@@ -94,7 +94,7 @@ User context:
     const result = JSON.parse(response.choices[0].message.content || '{"recommendations": []}');
     return result.recommendations || [];
   } catch (error) {
-    throw new Error(`Failed to generate AI recommendations: ${error.message}`);
+    throw new Error(`Failed to generate AI recommendations: ${(error as Error).message}`);
   }
 }
 
@@ -121,7 +121,7 @@ export async function analyzePetFriendlyPlaces(
     const result = JSON.parse(response.choices[0].message.content || '{"places": []}');
     return result.places || [];
   } catch (error) {
-    throw new Error(`Failed to analyze pet-friendly places: ${error.message}`);
+    throw new Error(`Failed to analyze pet-friendly places: ${(error as Error).message}`);
   }
 }
 
@@ -143,6 +143,6 @@ export async function generateContractInsights(contractData: any): Promise<strin
 
     return response.choices[0].message.content || 'No insights available';
   } catch (error) {
-    throw new Error(`Failed to generate contract insights: ${error.message}`);
+    throw new Error(`Failed to generate contract insights: ${(error as Error).message}`);
   }
 }
