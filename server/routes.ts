@@ -6,6 +6,7 @@ import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries,
 import { generateAIRecommendations } from "./services/openai.js";
 import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema } from "@shared/schema";
 import type { MulterRequest } from "./types/multer.js";
+import * as XLSX from 'xlsx';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -278,6 +279,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schedules = await storage.getAllComplianceSchedules(userId);
       res.json(schedules);
     } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Export ASC 842 schedule to Excel
+  app.get("/api/compliance-schedules/:scheduleId/export-excel", async (req, res) => {
+    try {
+      const { scheduleId } = req.params;
+      
+      // Find the compliance schedule by ID
+      const userId = "user-1";
+      const schedules = await storage.getAllComplianceSchedules(userId);
+      const schedule = schedules.find(s => s.id === scheduleId);
+      
+      if (!schedule) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      
+      if (schedule.type !== 'ASC842') {
+        return res.status(400).json({ message: "Only ASC 842 schedules can be exported to Excel" });
+      }
+      
+      // Parse the schedule data
+      let scheduleData;
+      try {
+        scheduleData = typeof schedule.scheduleData === 'string' 
+          ? JSON.parse(schedule.scheduleData) 
+          : schedule.scheduleData;
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid schedule data format" });
+      }
+      
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      
+      // Prepare data for Excel export
+      const excelData = [
+        // Header row
+        [
+          'Period',
+          'Payment Date',
+          'Lease Payment',
+          'Interest Expense',
+          'Principal Payment',
+          'Lease Liability',
+          'ROU Asset Value',
+          'ROU Asset Amortization',
+          'Cumulative Amortization',
+          'Short-term Liability',
+          'Long-term Liability',
+          'Interest Amortized',
+          'Accrued Interest',
+          'Prepaid Rent'
+        ]
+      ];
+      
+      // Add data rows
+      scheduleData.forEach((item: any) => {
+        excelData.push([
+          item.period || '',
+          item.paymentDate || '',
+          item.leasePayment || 0,
+          item.interestExpense || item.interest || 0,
+          item.principalPayment || item.principal || 0,
+          item.leaseLiability || item.leaseLIABILITY || item.remainingBalance || 0,
+          item.rouAssetValue || item.routAssetValue || 0,
+          item.rouAssetAmortization || item.routAssetAmortization || 0,
+          item.cumulativeAmortization || 0,
+          item.shortTermLiability || 0,
+          item.longTermLiability || 0,
+          item.interestAmortized || 0,
+          item.accruedInterest || 0,
+          item.prepaidRent || 0
+        ]);
+      });
+      
+      // Create worksheet from data
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      
+      // Set column widths for better formatting
+      const colWidths = [
+        { wch: 8 },  // Period
+        { wch: 12 }, // Payment Date
+        { wch: 15 }, // Lease Payment
+        { wch: 15 }, // Interest Expense
+        { wch: 15 }, // Principal Payment
+        { wch: 15 }, // Lease Liability
+        { wch: 15 }, // ROU Asset Value
+        { wch: 18 }, // ROU Asset Amortization
+        { wch: 18 }, // Cumulative Amortization
+        { wch: 15 }, // Short-term Liability
+        { wch: 15 }, // Long-term Liability
+        { wch: 15 }, // Interest Amortized
+        { wch: 12 }, // Accrued Interest
+        { wch: 12 }  // Prepaid Rent
+      ];
+      ws['!cols'] = colWidths;
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "ASC 842 Schedule");
+      
+      // Generate Excel file buffer
+      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      // Set response headers for file download
+      const fileName = `ASC842_Schedule_${scheduleId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Length', excelBuffer.length);
+      
+      // Send the Excel file
+      res.send(excelBuffer);
+      
+    } catch (error) {
+      console.error('Excel export error:', error);
       res.status(500).json({ message: (error as Error).message });
     }
   });

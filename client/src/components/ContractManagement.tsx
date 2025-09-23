@@ -291,6 +291,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
     const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
     const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
     const [selectedScheduleDetails, setSelectedScheduleDetails] = useState<any>(null);
+    const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
     const [showScheduleDetails, setShowScheduleDetails] = useState<boolean>(false);
 
     const { data: complianceSchedules } = useQuery({
@@ -485,6 +486,7 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
                             parsedScheduleData = schedule.scheduleData || [];
                           }
                           setSelectedScheduleDetails(parsedScheduleData);
+                          setSelectedScheduleId(schedule.id);
                           setShowScheduleDetails(true);
                         } catch (error) {
                           console.error('Error loading schedule data:', error);
@@ -522,25 +524,60 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
               if (e.target === e.currentTarget) {
                 setShowScheduleDetails(false);
                 setSelectedScheduleDetails(null);
+                setSelectedScheduleId(null);
               }
             }}
           >
             <div className="bg-card rounded-lg border border-border p-6 max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden relative">
               <div className="flex items-center justify-between mb-4">
                 <h5 className="text-lg font-semibold">ASC 842 Schedule Details</h5>
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowScheduleDetails(false);
-                    setSelectedScheduleDetails(null);
-                  }}
-                  className="text-muted-foreground hover:text-foreground p-2 rounded hover:bg-accent z-10 relative"
-                  data-testid="button-close-schedule-details"
-                  type="button"
-                >
-                  <i className="fas fa-times text-xl"></i>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      if (!selectedScheduleId) {
+                        toast({
+                          title: 'Error',
+                          description: 'No schedule selected for export',
+                          variant: 'destructive'
+                        });
+                        return;
+                      }
+                      // Create a download link that will trigger the backend endpoint
+                      const downloadUrl = `/api/compliance-schedules/${selectedScheduleId}/export-excel`;
+                      const link = document.createElement('a');
+                      link.href = downloadUrl;
+                      link.download = `ASC842_Schedule_${selectedScheduleId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      
+                      toast({
+                        title: 'Excel Export',
+                        description: 'Your ASC 842 schedule is being downloaded as an Excel file'
+                      });
+                    }}
+                    className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium flex items-center gap-2" 
+                    data-testid="button-download-excel"
+                    type="button"
+                  >
+                    <i className="fas fa-download"></i>
+                    Download Excel
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowScheduleDetails(false);
+                      setSelectedScheduleDetails(null);
+                      setSelectedScheduleId(null);
+                    }}
+                    className="text-muted-foreground hover:text-foreground p-2 rounded hover:bg-accent z-10 relative"
+                    data-testid="button-close-schedule-details"
+                    type="button"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
               </div>
               
               <div className="overflow-auto max-h-[70vh]">
