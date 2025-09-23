@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type UserPet, type InsertUserPet, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type UserPet, type InsertUserPet, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -21,11 +21,18 @@ export interface IStorage {
   
   // Compliance schedules
   getComplianceSchedules(contractId: string): Promise<ComplianceSchedule[]>;
+  getAllComplianceSchedules(userId: string): Promise<ComplianceSchedule[]>;
   createComplianceSchedule(schedule: InsertComplianceSchedule): Promise<ComplianceSchedule>;
   
   // Journal entries
   getJournalEntries(contractId: string): Promise<JournalEntry[]>;
+  getAllJournalEntries(userId: string): Promise<JournalEntry[]>;
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
+  
+  // Payments
+  getPayments(userId: string): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  markPaymentPaid(paymentId: string): Promise<Payment | undefined>;
   
   
   // User pets
@@ -43,6 +50,7 @@ export class MemStorage implements IStorage {
   private documents: Map<string, Document> = new Map();
   private complianceSchedules: Map<string, ComplianceSchedule> = new Map();
   private journalEntries: Map<string, JournalEntry> = new Map();
+  private payments: Map<string, Payment> = new Map();
   private userPets: Map<string, UserPet> = new Map();
   private aiRecommendations: Map<string, AIRecommendation> = new Map();
 
@@ -61,6 +69,37 @@ export class MemStorage implements IStorage {
     };
     this.users.set(defaultUser.id, defaultUser);
 
+
+    // Add sample contracts for testing
+    const contract1: Contract = {
+      id: "contract-1",
+      name: "Office Lease Agreement",
+      vendor: "Metro Properties LLC",
+      type: "Real Estate",
+      paymentTerms: "Monthly",
+      nextPayment: new Date(2024, 0, 15), // Jan 15, 2024
+      amount: "120000.00",
+      status: "Active",
+      documentId: null,
+      userId: "user-1",
+      createdAt: new Date()
+    };
+    this.contracts.set(contract1.id, contract1);
+
+    const contract2: Contract = {
+      id: "contract-2", 
+      name: "Equipment Lease",
+      vendor: "TechEquip Solutions",
+      type: "Equipment",
+      paymentTerms: "Quarterly",
+      nextPayment: new Date(2024, 2, 1), // Mar 1, 2024
+      amount: "85000.00",
+      status: "Active",
+      documentId: null,
+      userId: "user-1",
+      createdAt: new Date()
+    };
+    this.contracts.set(contract2.id, contract2);
 
     // Add sample user pet
     const userPet: UserPet = {
@@ -185,6 +224,56 @@ export class MemStorage implements IStorage {
     };
     this.journalEntries.set(id, entry);
     return entry;
+  }
+
+  async getAllComplianceSchedules(userId: string): Promise<ComplianceSchedule[]> {
+    const userContracts = Array.from(this.contracts.values()).filter(
+      contract => contract.userId === userId
+    );
+    const contractIds = new Set(userContracts.map(contract => contract.id));
+    
+    return Array.from(this.complianceSchedules.values()).filter(
+      schedule => contractIds.has(schedule.contractId)
+    );
+  }
+
+  async getAllJournalEntries(userId: string): Promise<JournalEntry[]> {
+    return Array.from(this.journalEntries.values()).filter(
+      entry => entry.userId === userId
+    );
+  }
+
+  async getPayments(userId: string): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(
+      payment => payment.userId === userId
+    );
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const id = randomUUID();
+    const payment: Payment = {
+      ...insertPayment,
+      id,
+      status: insertPayment.status || 'Scheduled',
+      paidDate: null,
+      createdAt: new Date()
+    };
+    this.payments.set(id, payment);
+    return payment;
+  }
+
+  async markPaymentPaid(paymentId: string): Promise<Payment | undefined> {
+    const payment = this.payments.get(paymentId);
+    if (payment) {
+      const updatedPayment = {
+        ...payment,
+        status: 'Paid',
+        paidDate: new Date()
+      };
+      this.payments.set(paymentId, updatedPayment);
+      return updatedPayment;
+    }
+    return undefined;
   }
 
 

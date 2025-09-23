@@ -19,10 +19,10 @@ export function Sidebar() {
       <div className="p-6 border-b border-border">
         <div className="flex items-center space-x-3">
           <div className="bg-primary text-primary-foreground rounded-lg p-2">
-            <i className="fas fa-paw text-xl"></i>
+            <i className="fas fa-file-contract text-xl"></i>
           </div>
           <div>
-            <h1 className="font-bold text-lg">TravelContract</h1>
+            <h1 className="font-bold text-lg">YuKa Contracts</h1>
             <p className="text-sm text-muted-foreground">Pro Platform</p>
           </div>
         </div>

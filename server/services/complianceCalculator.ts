@@ -37,12 +37,12 @@ export function generateASC842Schedule(
   let remainingBalance = leaseAmount;
   
   for (let period = 1; period <= leaseTerm; period++) {
-    const interest = remainingBalance * (discountRate / 12);
+    const interest = remainingBalance * discountRate; // Annual interest, not monthly
     const principal = annualPayment - interest;
     remainingBalance = Math.max(0, remainingBalance - principal);
     
     const paymentDate = new Date();
-    paymentDate.setMonth(paymentDate.getMonth() + period);
+    paymentDate.setFullYear(paymentDate.getFullYear() + period); // Annual periods, not monthly
     
     schedule.push({
       paymentDate: paymentDate.toISOString().split('T')[0],

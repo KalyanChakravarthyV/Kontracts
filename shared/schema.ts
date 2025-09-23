@@ -73,6 +73,17 @@ export const userPets = pgTable("user_pets", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const payments = pgTable("payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contractId: varchar("contract_id").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  status: text("status").notNull().default("Scheduled"), // Scheduled, Due, Paid, Overdue
+  paidDate: timestamp("paid_date"),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 export const aiRecommendations = pgTable("ai_recommendations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -116,6 +127,12 @@ export const insertUserPetSchema = createInsertSchema(userPets).omit({
   createdAt: true,
 });
 
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+  paidDate: true,
+});
+
 export const insertAIRecommendationSchema = createInsertSchema(aiRecommendations).omit({
   id: true,
   createdAt: true,
@@ -137,6 +154,8 @@ export type ComplianceSchedule = typeof complianceSchedules.$inferSelect;
 export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
 export type JournalEntry = typeof journalEntries.$inferSelect;
 
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Payment = typeof payments.$inferSelect;
 
 export type InsertUserPet = z.infer<typeof insertUserPetSchema>;
 export type UserPet = typeof userPets.$inferSelect;

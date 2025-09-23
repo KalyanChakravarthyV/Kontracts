@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const amount = parseFloat(contract.amount);
       const discountRate = req.body.discountRate || 0.05;
       const leaseTerm = req.body.leaseTerm || 5;
-      const annualPayment = req.body.annualPayment || amount / leaseTerm;
+      const annualPayment = req.body.annualPayment || (amount / leaseTerm);
 
       let scheduleData;
       let presentValue = 0;
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduleData = generateASC842Schedule(amount, annualPayment, leaseTerm, discountRate);
         presentValue = calculatePresentValue(
           scheduleData.map(s => s.leasePayment),
-          discountRate / 12,
+          discountRate, // Use annual discount rate for annual payments
           scheduleData.map((_, i) => i + 1)
         );
       } else if (type === 'IFRS16') {
@@ -176,10 +176,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         discountRate: discountRate.toString()
       });
 
+      // Generate payment records for each schedule period
+      const userId = "user-1";
+      const createdPayments = [];
+      
+      if (type === 'ASC842') {
+        for (const scheduleItem of scheduleData as any[]) {
+          const payment = await storage.createPayment({
+            contractId,
+            amount: scheduleItem.leasePayment.toString(),
+            dueDate: new Date(scheduleItem.paymentDate),
+            status: new Date(scheduleItem.paymentDate) <= new Date() ? 'Due' : 'Scheduled',
+            userId
+          });
+          createdPayments.push(payment);
+        }
+      } else if (type === 'IFRS16') {
+        for (let i = 0; i < (scheduleData as any[]).length; i++) {
+          const scheduleItem = (scheduleData as any[])[i];
+          const dueDate = new Date();
+          dueDate.setFullYear(dueDate.getFullYear() + i + 1);
+          
+          const payment = await storage.createPayment({
+            contractId,
+            amount: scheduleItem.leasePayment.toString(),
+            dueDate,
+            status: dueDate <= new Date() ? 'Due' : 'Scheduled',
+            userId
+          });
+          createdPayments.push(payment);
+        }
+      }
+
       res.status(201).json({
         schedule: complianceSchedule,
         data: scheduleData,
-        presentValue
+        presentValue,
+        paymentsCreated: createdPayments.length
       });
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
@@ -233,6 +266,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const entries = await storage.getJournalEntries(req.params.contractId);
       res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Global compliance schedules
+  app.get("/api/compliance-schedules", async (req, res) => {
+    try {
+      const userId = "user-1";
+      const schedules = await storage.getAllComplianceSchedules(userId);
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Global journal entries
+  app.get("/api/journal-entries", async (req, res) => {
+    try {
+      const userId = "user-1";
+      const entries = await storage.getAllJournalEntries(userId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Payment tracking
+  app.get("/api/payments", async (req, res) => {
+    try {
+      const userId = "user-1";
+      const payments = await storage.getPayments(userId);
+      res.json(payments);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/payments/:paymentId/mark-paid", async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const payment = await storage.markPaymentPaid(paymentId);
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/contracts/:contractId/payments", async (req, res) => {
+    try {
+      const { contractId } = req.params;
+      const contract = await storage.getContract(contractId);
+      
+      if (!contract) {
+        return res.status(404).json({ message: "Contract not found" });
+      }
+
+      // Generate payment schedule based on contract terms
+      const payments = [];
+      const amount = parseFloat(contract.amount);
+      const baseDate = new Date(contract.nextPayment);
+      
+      let paymentAmount;
+      let numPayments;
+      
+      if (contract.paymentTerms === 'Monthly') {
+        paymentAmount = amount / 12;
+        numPayments = 12;
+      } else if (contract.paymentTerms === 'Quarterly') {
+        paymentAmount = amount / 4;
+        numPayments = 4;
+      } else if (contract.paymentTerms === 'Annually') {
+        paymentAmount = amount;
+        numPayments = 1;
+      } else {
+        return res.status(400).json({ message: "Invalid payment terms" });
+      }
+      
+      for (let i = 0; i < Math.min(numPayments * 2, 24); i++) {
+        const dueDate = new Date(baseDate);
+        
+        if (contract.paymentTerms === 'Monthly') {
+          dueDate.setMonth(dueDate.getMonth() + i);
+        } else if (contract.paymentTerms === 'Quarterly') {
+          dueDate.setMonth(dueDate.getMonth() + (i * 3));
+        } else if (contract.paymentTerms === 'Annually') {
+          dueDate.setFullYear(dueDate.getFullYear() + i);
+        }
+        
+        const payment = await storage.createPayment({
+          contractId,
+          amount: paymentAmount.toString(),
+          dueDate,
+          status: i === 0 && dueDate <= new Date() ? 'Due' : 'Scheduled',
+          userId: "user-1"
+        });
+        
+        payments.push(payment);
+      }
+      
+      res.status(201).json(payments);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }
