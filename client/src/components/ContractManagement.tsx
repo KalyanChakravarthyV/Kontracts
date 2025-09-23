@@ -412,24 +412,42 @@ export function ContractManagement() {
           <div className="bg-card rounded-lg border border-border p-6">
             <h5 className="text-md font-semibold mb-4">Generated ASC 842 Schedule</h5>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Payment Date</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Lease Payment</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Interest</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Principal</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Remaining Balance</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Payment Date</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Expense</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Principal Payment</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Lease Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Asset Value</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">RoU Amortization</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Cumulative Amort.</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Short Term Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Long Term Liability</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Interest Amortized</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Accrued Interest</th>
+                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Prepaid Rent</th>
                   </tr>
                 </thead>
                 <tbody>
                   {generatedSchedule.map((item: any, index: number) => (
                     <tr key={index} className="border-b border-border">
-                      <td className="py-2 px-3">{item.paymentDate}</td>
-                      <td className="py-2 px-3">${item.leasePayment.toLocaleString()}</td>
-                      <td className="py-2 px-3">${item.interest.toLocaleString()}</td>
-                      <td className="py-2 px-3">${item.principal.toLocaleString()}</td>
-                      <td className="py-2 px-3">${item.remainingBalance.toLocaleString()}</td>
+                      <td className="py-2 px-2 font-medium" data-testid={`asc842-period-${index}`}>{item.period}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-date-${index}`}>{item.paymentDate}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-payment-${index}`}>${item.leasePayment?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-interest-${index}`}>${item.interestExpense?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-principal-${index}`}>${item.principalPayment?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-liability-${index}`}>${item.leaseLIABILITY?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-rou-value-${index}`}>${item.routAssetValue?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-rou-amort-${index}`}>${item.routAssetAmortization?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-cumul-amort-${index}`}>${item.cumulativeAmortization?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-short-term-${index}`}>${item.shortTermLiability?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-long-term-${index}`}>${item.longTermLiability?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-interest-amort-${index}`}>${item.interestAmortized?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-accrued-${index}`}>${item.accruedInterest?.toLocaleString() || '0'}</td>
+                      <td className="py-2 px-2" data-testid={`asc842-prepaid-${index}`}>${item.prepaidRent?.toLocaleString() || '0'}</td>
                     </tr>
                   ))}
                 </tbody>
