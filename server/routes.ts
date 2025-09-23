@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { upload, extractAndProcessContract } from "./services/documentProcessor.js";
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
-import { generateAIRecommendations, analyzePetFriendlyPlaces } from "./services/openai.js";
+import { generateAIRecommendations } from "./services/openai.js";
 import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema } from "@shared/schema";
 import type { MulterRequest } from "./types/multer.js";
 
@@ -16,7 +16,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const contracts = await storage.getContracts(userId);
       const activeContracts = contracts.filter(c => c.status === 'Active');
-      const petFriendlyPlaces = await storage.getPetFriendlyPlaces();
       
       const pendingPayments = contracts
         .filter(c => new Date(c.nextPayment) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
@@ -24,7 +23,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         activeContracts: activeContracts.length,
-        petFriendlyPlaces: petFriendlyPlaces.length,
         pendingPayments,
         complianceScore: 98
       });
@@ -240,51 +238,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pet-friendly places
-  app.get("/api/pet-friendly-places", async (req, res) => {
-    try {
-      const { type, location } = req.query;
-      const places = await storage.getPetFriendlyPlaces(
-        type as string,
-        location as string
-      );
-      res.json(places);
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  app.post("/api/pet-friendly-places/search", async (req, res) => {
-    try {
-      const { location, petRequirements } = req.body;
-      
-      if (!location) {
-        return res.status(400).json({ message: "Location is required" });
-      }
-
-      const aiPlaces = await analyzePetFriendlyPlaces(location, petRequirements || []);
-      
-      // Store AI-generated places
-      for (const place of aiPlaces) {
-        await storage.createPetFriendlyPlace({
-          name: place.name,
-          type: place.type,
-          location: place.location,
-          description: place.description,
-          rating: place.rating?.toString(),
-          priceRange: place.priceRange,
-          amenities: JSON.stringify(place.amenities),
-          coordinates: JSON.stringify({ lat: 0, lng: 0 }),
-          imageUrl: null
-        });
-      }
-
-      const existingPlaces = await storage.getPetFriendlyPlaces();
-      res.json(existingPlaces);
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
 
   // User pets
   app.get("/api/user/pets", async (req, res) => {
@@ -322,9 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const aiRecommendations = await generateAIRecommendations({
         recentContracts: contracts.slice(0, 5),
-        upcomingPayments,
-        location: "Seattle, WA",
-        pets
+        upcomingPayments
       });
 
       // Store recommendations
@@ -334,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: rec.type,
           title: rec.title,
           description: rec.description,
-          actionUrl: rec.location || '',
+          actionUrl: '',
           priority: rec.priority,
           isRead: false
         });

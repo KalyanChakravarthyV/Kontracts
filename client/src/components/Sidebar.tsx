@@ -45,14 +45,6 @@ export function Sidebar() {
           <a 
             href="#" 
             className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            data-testid="link-pet-places"
-          >
-            <i className="fas fa-map-marker-alt w-5"></i>
-            <span>Pet-Friendly Places</span>
-          </a>
-          <a 
-            href="#" 
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             data-testid="link-ai-recommendations"
           >
             <i className="fas fa-robot w-5"></i>

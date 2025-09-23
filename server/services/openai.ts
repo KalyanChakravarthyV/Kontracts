@@ -17,11 +17,10 @@ export interface ContractData {
   description: string;
 }
 
-export interface PetFriendlyRecommendation {
-  type: 'travel' | 'accommodation' | 'restaurant' | 'veterinary';
+export interface ContractRecommendation {
+  type: 'contract' | 'payment' | 'compliance';
   title: string;
   description: string;
-  location?: string;
   priority: 'low' | 'medium' | 'high';
 }
 
@@ -63,17 +62,13 @@ export async function generateAIRecommendations(
   userContext: {
     recentContracts: any[];
     upcomingPayments: any[];
-    location?: string;
-    pets?: any[];
   }
-): Promise<PetFriendlyRecommendation[]> {
+): Promise<ContractRecommendation[]> {
   try {
     const context = `
 User context:
 - Recent contracts: ${userContext.recentContracts.length}
 - Upcoming payments: ${userContext.upcomingPayments.length}
-- Location: ${userContext.location || 'Not specified'}
-- Pets: ${userContext.pets?.length || 0}
 `;
 
     const response = await openai.chat.completions.create({
@@ -81,7 +76,7 @@ User context:
       messages: [
         {
           role: "system",
-          content: "You are an AI assistant that provides personalized recommendations for contract management and pet-friendly travel. Generate 3-5 relevant recommendations based on the user context. Respond with JSON in this format: { 'recommendations': [{ 'type': string, 'title': string, 'description': string, 'location': string, 'priority': string }] }"
+          content: "You are an AI assistant that provides personalized recommendations for contract management. Generate 3-5 relevant recommendations based on the user context. Respond with JSON in this format: { 'recommendations': [{ 'type': string, 'title': string, 'description': string, 'priority': string }] }"
         },
         {
           role: "user",
@@ -98,32 +93,6 @@ User context:
   }
 }
 
-export async function analyzePetFriendlyPlaces(
-  location: string,
-  petRequirements: string[]
-): Promise<any[]> {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [
-        {
-          role: "system",
-          content: "You are a travel expert specializing in pet-friendly accommodations and services. Generate realistic pet-friendly place recommendations based on location and pet requirements. Respond with JSON in this format: { 'places': [{ 'name': string, 'type': string, 'location': string, 'description': string, 'rating': number, 'priceRange': string, 'amenities': string[] }] }"
-        },
-        {
-          role: "user",
-          content: `Find pet-friendly places in ${location} with these requirements: ${petRequirements.join(', ')}`
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || '{"places": []}');
-    return result.places || [];
-  } catch (error) {
-    throw new Error(`Failed to analyze pet-friendly places: ${(error as Error).message}`);
-  }
-}
 
 export async function generateContractInsights(contractData: any): Promise<string> {
   try {

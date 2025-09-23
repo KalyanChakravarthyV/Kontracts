@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type PetFriendlyPlace, type InsertPetFriendlyPlace, type UserPet, type InsertUserPet, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type UserPet, type InsertUserPet, type AIRecommendation, type InsertAIRecommendation } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -27,9 +27,6 @@ export interface IStorage {
   getJournalEntries(contractId: string): Promise<JournalEntry[]>;
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   
-  // Pet-friendly places
-  getPetFriendlyPlaces(type?: string, location?: string): Promise<PetFriendlyPlace[]>;
-  createPetFriendlyPlace(place: InsertPetFriendlyPlace): Promise<PetFriendlyPlace>;
   
   // User pets
   getUserPets(userId: string): Promise<UserPet[]>;
@@ -46,7 +43,6 @@ export class MemStorage implements IStorage {
   private documents: Map<string, Document> = new Map();
   private complianceSchedules: Map<string, ComplianceSchedule> = new Map();
   private journalEntries: Map<string, JournalEntry> = new Map();
-  private petFriendlyPlaces: Map<string, PetFriendlyPlace> = new Map();
   private userPets: Map<string, UserPet> = new Map();
   private aiRecommendations: Map<string, AIRecommendation> = new Map();
 
@@ -65,37 +61,6 @@ export class MemStorage implements IStorage {
     };
     this.users.set(defaultUser.id, defaultUser);
 
-    // Add some pet-friendly places
-    const places: PetFriendlyPlace[] = [
-      {
-        id: "place-1",
-        name: "The Pet Palace Hotel",
-        type: "hotel",
-        location: "Downtown Seattle, WA",
-        description: "Luxury hotel with dedicated pet amenities, grooming services, and pet-sitting available.",
-        rating: "4.8",
-        priceRange: "$189/night",
-        amenities: JSON.parse('["pet_sitting", "grooming", "pet_beds", "food_bowls"]'),
-        coordinates: JSON.parse('{"lat": 47.6062, "lng": -122.3321}'),
-        imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945",
-        createdAt: new Date()
-      },
-      {
-        id: "place-2",
-        name: "Paws & Plates Bistro",
-        type: "restaurant",
-        location: "Capitol Hill, Seattle",
-        description: "Farm-to-table restaurant with spacious patio and special pet menu items.",
-        rating: "4.6",
-        priceRange: "$$-$$$",
-        amenities: JSON.parse('["outdoor_seating", "pet_menu", "water_bowls", "treats"]'),
-        coordinates: JSON.parse('{"lat": 47.6205, "lng": -122.3212}'),
-        imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-        createdAt: new Date()
-      }
-    ];
-
-    places.forEach(place => this.petFriendlyPlaces.set(place.id, place));
 
     // Add sample user pet
     const userPet: UserPet = {
@@ -222,36 +187,6 @@ export class MemStorage implements IStorage {
     return entry;
   }
 
-  async getPetFriendlyPlaces(type?: string, location?: string): Promise<PetFriendlyPlace[]> {
-    let places = Array.from(this.petFriendlyPlaces.values());
-    
-    if (type) {
-      places = places.filter(place => place.type === type);
-    }
-    
-    if (location) {
-      places = places.filter(place => place.location.toLowerCase().includes(location.toLowerCase()));
-    }
-    
-    return places;
-  }
-
-  async createPetFriendlyPlace(insertPlace: InsertPetFriendlyPlace): Promise<PetFriendlyPlace> {
-    const id = randomUUID();
-    const place: PetFriendlyPlace = { 
-      ...insertPlace, 
-      id,
-      description: insertPlace.description || null,
-      rating: insertPlace.rating || null,
-      priceRange: insertPlace.priceRange || null,
-      amenities: insertPlace.amenities || null,
-      coordinates: insertPlace.coordinates || null,
-      imageUrl: insertPlace.imageUrl || null,
-      createdAt: new Date()
-    };
-    this.petFriendlyPlaces.set(id, place);
-    return place;
-  }
 
   async getUserPets(userId: string): Promise<UserPet[]> {
     return Array.from(this.userPets.values()).filter(pet => pet.userId === userId);

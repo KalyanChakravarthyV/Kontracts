@@ -61,19 +61,6 @@ export const journalEntries = pgTable("journal_entries", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
-export const petFriendlyPlaces = pgTable("pet_friendly_places", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  type: text("type").notNull(), // hotel, restaurant, park, veterinarian
-  location: text("location").notNull(),
-  description: text("description"),
-  rating: decimal("rating", { precision: 2, scale: 1 }),
-  priceRange: text("price_range"),
-  amenities: jsonb("amenities"),
-  coordinates: jsonb("coordinates"),
-  imageUrl: text("image_url"),
-  createdAt: timestamp("created_at").default(sql`now()`),
-});
 
 export const userPets = pgTable("user_pets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -123,10 +110,6 @@ export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit(
   createdAt: true,
 });
 
-export const insertPetFriendlyPlaceSchema = createInsertSchema(petFriendlyPlaces).omit({
-  id: true,
-  createdAt: true,
-});
 
 export const insertUserPetSchema = createInsertSchema(userPets).omit({
   id: true,
@@ -154,8 +137,6 @@ export type ComplianceSchedule = typeof complianceSchedules.$inferSelect;
 export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
 export type JournalEntry = typeof journalEntries.$inferSelect;
 
-export type InsertPetFriendlyPlace = z.infer<typeof insertPetFriendlyPlaceSchema>;
-export type PetFriendlyPlace = typeof petFriendlyPlaces.$inferSelect;
 
 export type InsertUserPet = z.infer<typeof insertUserPetSchema>;
 export type UserPet = typeof userPets.$inferSelect;

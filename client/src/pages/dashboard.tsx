@@ -4,7 +4,6 @@ import { StatsCards } from "@/components/StatsCards";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { AIRecommendations } from "@/components/AIRecommendations";
 import { ContractManagement } from "@/components/ContractManagement";
-import { PetFriendlyTravel } from "@/components/PetFriendlyTravel";
 
 export default function Dashboard() {
   return (
@@ -23,8 +22,6 @@ export default function Dashboard() {
           </div>
           
           <ContractManagement />
-          
-          <PetFriendlyTravel />
         </main>
       </div>
     </div>

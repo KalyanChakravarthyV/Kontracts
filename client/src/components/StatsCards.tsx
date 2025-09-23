@@ -22,7 +22,7 @@ export function StatsCards() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-muted-foreground">Active Contracts</h3>
@@ -41,23 +41,6 @@ export function StatsCards() {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Pet-Friendly Places</h3>
-          <div className="bg-green-100 text-green-600 rounded-full p-2">
-            <i className="fas fa-paw text-sm"></i>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <p className="text-2xl font-bold" data-testid="text-pet-friendly-places">
-            {stats?.petFriendlyPlaces || 0}
-          </p>
-          <p className="text-xs text-green-600">
-            <i className="fas fa-arrow-up mr-1"></i>
-            8% from last week
-          </p>
-        </div>
-      </div>
 
       <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
