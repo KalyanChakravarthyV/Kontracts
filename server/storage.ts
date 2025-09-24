@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type Payment, type InsertPayment, type UpdatePayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, payments, aiRecommendations } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type JournalEntrySetup, type InsertJournalEntrySetup, type Payment, type InsertPayment, type UpdatePayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, journalEntrySetups, payments, aiRecommendations } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -31,6 +31,12 @@ export interface IStorage {
   getAllJournalEntries(userId: string): Promise<JournalEntry[]>;
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   
+  // Journal entry setups
+  getJournalEntrySetups(userId: string): Promise<JournalEntrySetup[]>;
+  createJournalEntrySetup(setup: InsertJournalEntrySetup): Promise<JournalEntrySetup>;
+  updateJournalEntrySetup(id: string, updates: Partial<JournalEntrySetup>): Promise<JournalEntrySetup | undefined>;
+  deleteJournalEntrySetup(id: string): Promise<boolean>;
+  
   // Payments
   getPayments(userId: string): Promise<Payment[]>;
   createPayment(payment: InsertPayment): Promise<Payment>;
@@ -50,6 +56,7 @@ export class MemStorage implements IStorage {
   private documents: Map<string, Document> = new Map();
   private complianceSchedules: Map<string, ComplianceSchedule> = new Map();
   private journalEntries: Map<string, JournalEntry> = new Map();
+  private journalEntrySetups: Map<string, JournalEntrySetup> = new Map();
   private payments: Map<string, Payment> = new Map();
   private aiRecommendations: Map<string, AIRecommendation> = new Map();
 
@@ -228,6 +235,38 @@ export class MemStorage implements IStorage {
     return Array.from(this.journalEntries.values()).filter(
       entry => entry.userId === userId
     );
+  }
+
+  // Journal entry setups
+  async getJournalEntrySetups(userId: string): Promise<JournalEntrySetup[]> {
+    return Array.from(this.journalEntrySetups.values()).filter(
+      setup => setup.userId === userId
+    );
+  }
+
+  async createJournalEntrySetup(insertSetup: InsertJournalEntrySetup): Promise<JournalEntrySetup> {
+    const id = randomUUID();
+    const setup: JournalEntrySetup = {
+      ...insertSetup,
+      id,
+      createdAt: new Date()
+    };
+    this.journalEntrySetups.set(id, setup);
+    return setup;
+  }
+
+  async updateJournalEntrySetup(id: string, updates: Partial<JournalEntrySetup>): Promise<JournalEntrySetup | undefined> {
+    const setup = this.journalEntrySetups.get(id);
+    if (setup) {
+      const updatedSetup = { ...setup, ...updates };
+      this.journalEntrySetups.set(id, updatedSetup);
+      return updatedSetup;
+    }
+    return undefined;
+  }
+
+  async deleteJournalEntrySetup(id: string): Promise<boolean> {
+    return this.journalEntrySetups.delete(id);
   }
 
   async getPayments(userId: string): Promise<Payment[]> {
@@ -417,6 +456,35 @@ export class DatabaseStorage implements IStorage {
       .values(insertEntry)
       .returning();
     return entry;
+  }
+
+  // Journal entry setups
+  async getJournalEntrySetups(userId: string): Promise<JournalEntrySetup[]> {
+    return await db.select().from(journalEntrySetups).where(eq(journalEntrySetups.userId, userId));
+  }
+
+  async createJournalEntrySetup(insertSetup: InsertJournalEntrySetup): Promise<JournalEntrySetup> {
+    const [setup] = await db
+      .insert(journalEntrySetups)
+      .values(insertSetup)
+      .returning();
+    return setup;
+  }
+
+  async updateJournalEntrySetup(id: string, updates: Partial<JournalEntrySetup>): Promise<JournalEntrySetup | undefined> {
+    const [updatedSetup] = await db
+      .update(journalEntrySetups)
+      .set(updates)
+      .where(eq(journalEntrySetups.id, id))
+      .returning();
+    return updatedSetup || undefined;
+  }
+
+  async deleteJournalEntrySetup(id: string): Promise<boolean> {
+    const result = await db
+      .delete(journalEntrySetups)
+      .where(eq(journalEntrySetups.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getPayments(userId: string): Promise<Payment[]> {

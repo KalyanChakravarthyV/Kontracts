@@ -61,6 +61,21 @@ export const journalEntries = pgTable("journal_entries", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const journalEntrySetups = pgTable("journal_entry_setups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  entryType: text("entry_type").notNull(), // 'initial', 'periodic', 'final'
+  triggerEvent: text("trigger_event").notNull(), // 'contract_start', 'payment_due', 'period_end'
+  debitAccount: text("debit_account").notNull(),
+  creditAccount: text("credit_account").notNull(),
+  amountColumn: text("amount_column").notNull(), // ASC 842 column reference
+  periodReference: text("period_reference").notNull().default("n"), // n, n-1, n+1, etc.
+  isActive: boolean("is_active").notNull().default(true),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 
 
 export const payments = pgTable("payments", {
@@ -111,6 +126,11 @@ export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit(
   createdAt: true,
 });
 
+export const insertJournalEntrySetupSchema = createInsertSchema(journalEntrySetups).omit({
+  id: true,
+  createdAt: true,
+});
+
 
 
 export const insertPaymentSchema = createInsertSchema(payments).omit({
@@ -148,6 +168,9 @@ export type ComplianceSchedule = typeof complianceSchedules.$inferSelect;
 
 export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
 export type JournalEntry = typeof journalEntries.$inferSelect;
+
+export type InsertJournalEntrySetup = z.infer<typeof insertJournalEntrySetupSchema>;
+export type JournalEntrySetup = typeof journalEntrySetups.$inferSelect;
 
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type UpdatePayment = z.infer<typeof updatePaymentSchema>;
