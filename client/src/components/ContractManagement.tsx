@@ -15,10 +15,17 @@ interface ContractManagementProps {
 export function ContractManagement({ initialTab = "contracts" }: ContractManagementProps = {}) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedContract, setSelectedContract] = useState<string | null>(null);
+  const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
   const [scheduleParams, setScheduleParams] = useState({
+    // ASC 842 properties
     discountRate: 0.05,
     leaseTerm: 5,
-    annualPayment: 0
+    annualPayment: 0,
+    // IFRS 16 properties  
+    leaseAmount: '',
+    interestRate: '',
+    paymentFrequency: 'monthly',
+    startDate: ''
   });
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const { toast } = useToast();
@@ -416,13 +423,14 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
     contracts, 
     scheduleParams, 
     setScheduleParams, 
+    selectedContractForSchedule,
+    setSelectedContractForSchedule,
     showScheduleForm, 
     setShowScheduleForm, 
     onGenerateSchedule, 
     isGenerating 
   }: any) {
     const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
-    const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
     const [selectedScheduleDetails, setSelectedScheduleDetails] = useState<any>(null);
     const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
     const [showScheduleDetails, setShowScheduleDetails] = useState<boolean>(false);
@@ -759,15 +767,15 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
   }
 
   // IFRS 16 View Component
-  function IFRS16View({ contracts, onGenerateSchedule, isGenerating }: any) {
-    const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<string>('');
-    const [scheduleParams, setScheduleParams] = useState({
-      leaseAmount: '',
-      leaseTerm: '',
-      interestRate: '',
-      paymentFrequency: 'monthly',
-      startDate: new Date().toISOString().split('T')[0]
-    });
+  function IFRS16View({ 
+    contracts, 
+    scheduleParams,
+    setScheduleParams,
+    selectedContractForSchedule,
+    setSelectedContractForSchedule,
+    onGenerateSchedule, 
+    isGenerating 
+  }: any) {
     const [generatedSchedule, setGeneratedSchedule] = useState<any[]>([]);
     const [selectedScheduleDetails, setSelectedScheduleDetails] = useState<any[]>([]);
     const [complianceSchedules, setComplianceSchedules] = useState<any[]>([]);
@@ -1310,6 +1318,8 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
             contracts={contracts}
             scheduleParams={scheduleParams}
             setScheduleParams={setScheduleParams}
+            selectedContractForSchedule={selectedContractForSchedule}
+            setSelectedContractForSchedule={setSelectedContractForSchedule}
             showScheduleForm={showScheduleForm}
             setShowScheduleForm={setShowScheduleForm}
             onGenerateSchedule={handleGenerateSchedule}
@@ -1321,6 +1331,10 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
         {activeTab === "ifrs16" && (
           <IFRS16View 
             contracts={contracts}
+            scheduleParams={scheduleParams}
+            setScheduleParams={setScheduleParams}
+            selectedContractForSchedule={selectedContractForSchedule}
+            setSelectedContractForSchedule={setSelectedContractForSchedule}
             onGenerateSchedule={(contractId) => handleGenerateSchedule(contractId, 'IFRS16')}
             isGenerating={complianceScheduleMutation.isPending}
           />
