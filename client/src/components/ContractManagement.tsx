@@ -1047,7 +1047,8 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
       debitAccount: '',
       creditAccount: '',
       amountColumn: '',
-      periodReference: 'n'
+      periodReference: 'n',
+      scheduleType: 'ASC842'
     });
 
     const { data: journalEntries } = useQuery({
@@ -1077,7 +1078,8 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
           debitAccount: '',
           creditAccount: '',
           amountColumn: '',
-          periodReference: 'n'
+          periodReference: 'n',
+          scheduleType: 'ASC842'
         });
       },
       onError: (error: any) => {
@@ -1148,7 +1150,8 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
         debitAccount: setup.debitAccount,
         creditAccount: setup.creditAccount,
         amountColumn: setup.amountColumn,
-        periodReference: setup.periodReference
+        periodReference: setup.periodReference,
+        scheduleType: setup.scheduleType || 'ASC842'
       });
       setShowSetupForm(true);
     };
@@ -1172,6 +1175,49 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
       { value: 'rouAssetAmortization', label: 'ROU Asset Amortization' },
       { value: 'endingRouAsset', label: 'Ending ROU Asset' },
       { value: 'cumulativeAmortization', label: 'Cumulative Amortization' }
+    ];
+
+    // IFRS 16 schedule columns for dropdown
+    const ifrs16Columns = [
+      { value: 'leaseId', label: 'Lease ID' },
+      { value: 'lesseeEntity', label: 'Lessee Entity' },
+      { value: 'underlyingAssetClass', label: 'Underlying Asset Class' },
+      { value: 'commencementDate', label: 'Commencement Date' },
+      { value: 'firstPaymentDate', label: 'First Payment Date' },
+      { value: 'leaseTermMonths', label: 'Lease Term (months)' },
+      { value: 'renewalOption', label: 'Renewal Option (Y/N)' },
+      { value: 'terminationOption', label: 'Termination Option (Y/N)' },
+      { value: 'purchaseOption', label: 'Purchase Option (Y/N)' },
+      { value: 'leaseIncentives', label: 'Lease Incentives' },
+      { value: 'initialDirectCosts', label: 'Initial Direct Costs' },
+      { value: 'lowValueExemption', label: 'Low-value Exemption (Y/N)' },
+      { value: 'shortTermExemption', label: 'Short-term Exemption (Y/N)' },
+      { value: 'variableIndexedTerms', label: 'Variable Indexed Terms (CPI etc)' },
+      { value: 'residualValueGuarantee', label: 'Residual Value Guarantee' },
+      { value: 'discountRate', label: 'Discount Rate' },
+      { value: 'leaseLiabilityInitial', label: 'Lease Liability - Initial' },
+      { value: 'rouAssetInitial', label: 'ROU Asset - Initial' },
+      { value: 'period', label: 'Period' },
+      { value: 'openingLiability', label: 'Opening Liability' },
+      { value: 'interestExpense', label: 'Interest Expense' },
+      { value: 'cashLeasePayment', label: 'Cash Lease Payment' },
+      { value: 'principalReduction', label: 'Principal Reduction' },
+      { value: 'closingLiability', label: 'Closing Liability' },
+      { value: 'rouDepreciationExpense', label: 'ROU Depreciation Expense' },
+      { value: 'rouClosingBalance', label: 'ROU Closing Balance' },
+      { value: 'variableLeaseExpense', label: 'Variable Lease Expense (not in liability)' },
+      { value: 'lowValueShortTermExpense', label: 'Low-value/Short-term Expense' },
+      { value: 'indexRateResetDate', label: 'Index/Rate Reset Date' },
+      { value: 'revisedCashFlows', label: 'Revised Cash Flows' },
+      { value: 'revisedDiscountRate', label: 'Revised Discount Rate' },
+      { value: 'remeasuredLiabilityDelta', label: 'Remeasured Liability Delta' },
+      { value: 'rouAssetAdjustment', label: 'ROU Asset Adjustment' },
+      { value: 'scopeChange', label: 'Scope Change (Y/N)' },
+      { value: 'disclosureMaturityAnalysis', label: 'Disclosure - Maturity Analysis' },
+      { value: 'disclosureWalt', label: 'Disclosure - WALT' },
+      { value: 'disclosureWadr', label: 'Disclosure - WADR' },
+      { value: 'cashOutflowsForLeases', label: 'Cash Outflows for Leases' },
+      { value: 'additionsToRouAssets', label: 'Additions to ROU Assets' }
     ];
 
     const periodReferences = [
