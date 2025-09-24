@@ -175,13 +175,82 @@ export function generateIFRS16Schedule(
   return schedule;
 }
 
-export function generateJournalEntries(
+export async function generateJournalEntries(
   contractData: any,
-  scheduleType: 'ASC842' | 'IFRS16'
+  scheduleType: 'ASC842' | 'IFRS16',
+  storage?: any,
+  userId?: string
 ) {
   const entries = [];
   const baseDate = new Date();
   
+  // If storage and userId are provided, use journal entry setups
+  if (storage && userId) {
+    try {
+      const setups = await storage.getJournalEntrySetups(userId);
+      
+      if (setups && setups.length > 0 && scheduleType === 'ASC842') {
+        // Try to load existing schedule from storage first
+        const existingSchedules = await storage.getComplianceSchedules(contractData.id);
+        const asc842Schedule = existingSchedules.find(s => s.type === 'ASC842');
+        let schedule = [];
+        
+        if (asc842Schedule && asc842Schedule.scheduleData) {
+          schedule = asc842Schedule.scheduleData;
+        } else {
+          // Generate new schedule with proper numeric parameters
+          const amount = parseFloat(contractData.amount) || 0;
+          const leaseTerm = 5; // Default 5 years
+          const discountRate = 0.05; // Default 5%
+          const annualPayment = amount / leaseTerm;
+          schedule = generateASC842Schedule(amount, annualPayment, leaseTerm, discountRate);
+        }
+        
+        for (const setup of setups) {
+          // Skip if setup doesn't match trigger event
+          if (setup.triggerEvent !== 'payment_due' && setup.triggerEvent !== 'contract_start') {
+            continue;
+          }
+          
+          // Calculate entries for each period based on setup
+          for (let periodIndex = 0; periodIndex < schedule.length; periodIndex++) {
+            const scheduleItem = schedule[periodIndex];
+            let amount = 0;
+            
+            // Get amount based on setup's amount column and period reference
+            const targetPeriodIndex = calculateTargetPeriodIndex(periodIndex, setup.periodReference, schedule.length);
+            if (targetPeriodIndex >= 0 && targetPeriodIndex < schedule.length) {
+              const targetItem = schedule[targetPeriodIndex];
+              amount = getAmountFromScheduleItem(targetItem, setup.amountColumn);
+            }
+            
+            if (amount > 0) {
+              const entryDate = new Date(scheduleItem.paymentDate);
+              const entryData = {
+                entryDate: entryDate.toISOString(),
+                description: `${setup.name} - ${contractData.name} (Period ${scheduleItem.period})`,
+                debitAccount: setup.debitAccount,
+                creditAccount: setup.creditAccount,
+                amount: amount,
+                reference: `SETUP-${setup.id}-${contractData.id}-P${scheduleItem.period}`
+              };
+              entries.push(entryData);
+            }
+          }
+        }
+        
+        // If setups generated entries, return them
+        if (entries.length > 0) {
+          return entries;
+        }
+      }
+    } catch (error) {
+      console.error('Error generating journal entries from setups:', error);
+      // Fall back to default behavior
+    }
+  }
+  
+  // Default behavior (legacy) if no setups or error
   if (scheduleType === 'ASC842') {
     // Initial recognition
     entries.push({
@@ -220,4 +289,48 @@ export function generateJournalEntries(
   }
   
   return entries;
+}
+
+// Helper function to calculate target period index based on period reference
+function calculateTargetPeriodIndex(currentPeriod: number, periodReference: string, totalPeriods: number): number {
+  switch (periodReference) {
+    case 'n':
+      return currentPeriod;
+    case 'n-1':
+      return currentPeriod - 1;
+    case 'n+1':
+      return currentPeriod + 1;
+    case '1':
+      return 0; // First period
+    case 'last':
+      return totalPeriods - 1; // Last period
+    default:
+      // Try to parse as a number
+      const num = parseInt(periodReference);
+      if (!isNaN(num)) {
+        return num - 1; // Convert to zero-based index
+      }
+      return currentPeriod; // Default to current period
+  }
+}
+
+// Helper function to extract amount from schedule item based on column name
+function getAmountFromScheduleItem(scheduleItem: any, amountColumn: string): number {
+  // Try the requested column first, then fall back to alternative names
+  const alternativeNames: { [key: string]: string } = {
+    'principalPayment': 'principalReduction',
+    'beginningLeaseLiability': 'beginningLeaseLIABILITY',
+    'endingLeaseLiability': 'endingLeaseLIABILITY',
+    'shortTermLiability': 'currentLeaseLIABILITY',
+    'longTermLiability': 'nonCurrentLeaseLIABILITY',
+    'beginningRouAsset': 'beginningRightOfUseAsset',
+    'rouAssetAmortization': 'depreciationExpense',
+    'endingRouAsset': 'endingRightOfUseAsset',
+    'cumulativeAmortization': 'cumulativeDepreciation'
+  };
+  
+  // First try the exact column name, then try the alternative
+  const value = scheduleItem[amountColumn] ?? scheduleItem[alternativeNames[amountColumn]];
+  
+  return typeof value === 'number' ? Math.abs(value) : 0;
 }

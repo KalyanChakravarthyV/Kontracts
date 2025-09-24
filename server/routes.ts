@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { upload, extractAndProcessContract } from "./services/documentProcessor.js";
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
+
 import { generateAIRecommendations } from "./services/openai.js";
 import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema, insertJournalEntrySetupSchema, updatePaymentSchema } from "@shared/schema";
 import { ZodError } from "zod";
@@ -241,7 +242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { scheduleType } = req.body;
-      const generatedEntries = generateJournalEntries(contract, scheduleType);
+      const userId = "user-1";
+      const generatedEntries = await generateJournalEntries(contract, scheduleType, storage, userId);
 
       const journalEntries = [];
       for (const entryData of generatedEntries) {
@@ -253,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           creditAccount: entryData.creditAccount,
           amount: entryData.amount.toString(),
           reference: entryData.reference,
-          userId: "user-1"
+          userId: userId
         });
         journalEntries.push(entry);
       }
@@ -410,6 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   // Journal entry setups
   app.get("/api/journal-entry-setups", async (req, res) => {
     try {
@@ -423,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/journal-entry-setups", async (req, res) => {
     try {
-      const validatedData = insertJournalEntrySetupSchema.parse(req.body);
+      const validatedData = insertJournalEntrySetupSchema.omit({ userId: true }).parse(req.body);
       const setup = await storage.createJournalEntrySetup({
         ...validatedData,
         userId: "user-1"
@@ -440,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/journal-entry-setups/:setupId", async (req, res) => {
     try {
       const { setupId } = req.params;
-      const validatedData = insertJournalEntrySetupSchema.partial().parse(req.body);
+      const validatedData = insertJournalEntrySetupSchema.omit({ userId: true }).partial().parse(req.body);
       
       const updatedSetup = await storage.updateJournalEntrySetup(setupId, validatedData);
       if (!updatedSetup) {
