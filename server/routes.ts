@@ -4,7 +4,7 @@ import { storage } from "./storage.js";
 import { upload, extractAndProcessContract } from "./services/documentProcessor.js";
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
 import { generateAIRecommendations } from "./services/openai.js";
-import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema, updatePaymentSchema } from "@shared/schema";
+import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema, insertJournalEntrySetupSchema, updatePaymentSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import type { MulterRequest } from "./types/multer.js";
 import * as XLSX from 'xlsx';
@@ -405,6 +405,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = "user-1";
       const entries = await storage.getAllJournalEntries(userId);
       res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Journal entry setups
+  app.get("/api/journal-entry-setups", async (req, res) => {
+    try {
+      const userId = "user-1";
+      const setups = await storage.getJournalEntrySetups(userId);
+      res.json(setups);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/journal-entry-setups", async (req, res) => {
+    try {
+      const validatedData = insertJournalEntrySetupSchema.parse(req.body);
+      const setup = await storage.createJournalEntrySetup({
+        ...validatedData,
+        userId: "user-1"
+      });
+      res.status(201).json(setup);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.put("/api/journal-entry-setups/:setupId", async (req, res) => {
+    try {
+      const { setupId } = req.params;
+      const validatedData = insertJournalEntrySetupSchema.partial().parse(req.body);
+      
+      const updatedSetup = await storage.updateJournalEntrySetup(setupId, validatedData);
+      if (!updatedSetup) {
+        return res.status(404).json({ message: "Journal entry setup not found" });
+      }
+      
+      res.json(updatedSetup);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/journal-entry-setups/:setupId", async (req, res) => {
+    try {
+      const { setupId } = req.params;
+      const deleted = await storage.deleteJournalEntrySetup(setupId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Journal entry setup not found" });
+      }
+      
+      res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }

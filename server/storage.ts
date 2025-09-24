@@ -249,6 +249,7 @@ export class MemStorage implements IStorage {
     const setup: JournalEntrySetup = {
       ...insertSetup,
       id,
+      description: insertSetup.description || null,
       createdAt: new Date()
     };
     this.journalEntrySetups.set(id, setup);
