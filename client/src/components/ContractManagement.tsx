@@ -1037,9 +1037,150 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
 
   // Journal Entries View Component  
   function JournalEntriesView({ contracts, onGenerateJournal, isGenerating }: any) {
+    const [showSetupForm, setShowSetupForm] = useState(false);
+    const [editingSetup, setEditingSetup] = useState<any>(null);
+    const [setupForm, setSetupForm] = useState({
+      name: '',
+      description: '',
+      entryType: 'periodic',
+      triggerEvent: 'payment_due',
+      debitAccount: '',
+      creditAccount: '',
+      amountColumn: '',
+      periodReference: 'n'
+    });
+
     const { data: journalEntries } = useQuery({
       queryKey: ['/api/journal-entries'],
     });
+
+    const { data: journalSetups } = useQuery({
+      queryKey: ['/api/journal-entry-setups'],
+    });
+
+    const createSetupMutation = useMutation({
+      mutationFn: async (data: any) => {
+        return await apiRequest('POST', '/api/journal-entry-setups', data);
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Journal entry setup created',
+          description: 'The setup has been created successfully.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/journal-entry-setups'] });
+        setShowSetupForm(false);
+        setSetupForm({
+          name: '',
+          description: '',
+          entryType: 'periodic',
+          triggerEvent: 'payment_due',
+          debitAccount: '',
+          creditAccount: '',
+          amountColumn: '',
+          periodReference: 'n'
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: 'Failed to create setup',
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
+    });
+
+    const updateSetupMutation = useMutation({
+      mutationFn: async ({ id, data }: { id: string; data: any }) => {
+        return await apiRequest('PUT', `/api/journal-entry-setups/${id}`, data);
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Journal entry setup updated',
+          description: 'The setup has been updated successfully.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/journal-entry-setups'] });
+        setEditingSetup(null);
+      },
+      onError: (error: any) => {
+        toast({
+          title: 'Failed to update setup',
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
+    });
+
+    const deleteSetupMutation = useMutation({
+      mutationFn: async (id: string) => {
+        return await apiRequest('DELETE', `/api/journal-entry-setups/${id}`);
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Journal entry setup deleted',
+          description: 'The setup has been deleted successfully.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/journal-entry-setups'] });
+      },
+      onError: (error: any) => {
+        toast({
+          title: 'Failed to delete setup',
+          description: error.message,
+          variant: 'destructive',
+        });
+      },
+    });
+
+    const handleSaveSetup = () => {
+      if (editingSetup) {
+        updateSetupMutation.mutate({ id: editingSetup.id, data: setupForm });
+      } else {
+        createSetupMutation.mutate(setupForm);
+      }
+    };
+
+    const handleEditSetup = (setup: any) => {
+      setEditingSetup(setup);
+      setSetupForm({
+        name: setup.name,
+        description: setup.description || '',
+        entryType: setup.entryType,
+        triggerEvent: setup.triggerEvent,
+        debitAccount: setup.debitAccount,
+        creditAccount: setup.creditAccount,
+        amountColumn: setup.amountColumn,
+        periodReference: setup.periodReference
+      });
+      setShowSetupForm(true);
+    };
+
+    const handleDeleteSetup = (setupId: string) => {
+      if (confirm('Are you sure you want to delete this journal entry setup?')) {
+        deleteSetupMutation.mutate(setupId);
+      }
+    };
+
+    // ASC 842 schedule columns for dropdown
+    const asc842Columns = [
+      { value: 'leasePayment', label: 'Lease Payment' },
+      { value: 'interestExpense', label: 'Interest Expense' },
+      { value: 'principalPayment', label: 'Principal Payment' },
+      { value: 'beginningLeaseLiability', label: 'Beginning Lease Liability' },
+      { value: 'endingLeaseLiability', label: 'Ending Lease Liability' },
+      { value: 'shortTermLiability', label: 'Short Term Liability' },
+      { value: 'longTermLiability', label: 'Long Term Liability' },
+      { value: 'beginningRouAsset', label: 'Beginning ROU Asset' },
+      { value: 'rouAssetAmortization', label: 'ROU Asset Amortization' },
+      { value: 'endingRouAsset', label: 'Ending ROU Asset' },
+      { value: 'cumulativeAmortization', label: 'Cumulative Amortization' }
+    ];
+
+    const periodReferences = [
+      { value: 'n', label: 'Current Period (n)' },
+      { value: 'n-1', label: 'Previous Period (n-1)' },
+      { value: 'n+1', label: 'Next Period (n+1)' },
+      { value: '1', label: 'First Period (1)' },
+      { value: 'last', label: 'Last Period' }
+    ];
 
     return (
       <div className="space-y-6">
@@ -1048,6 +1189,233 @@ export function ContractManagement({ initialTab = "contracts" }: ContractManagem
           <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90" data-testid="button-export-journal">
             <i className="fas fa-download mr-2"></i>Export Entries
           </button>
+        </div>
+
+        {/* Journal Entry Setups Section */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h5 className="text-md font-semibold">Journal Entry Setup</h5>
+            <Button 
+              onClick={() => setShowSetupForm(!showSetupForm)}
+              data-testid="button-add-setup"
+            >
+              {showSetupForm ? 'Cancel' : 'Add Setup'}
+            </Button>
+          </div>
+
+          {showSetupForm && (
+            <div className="bg-accent/20 rounded-lg p-4 mb-4">
+              <h6 className="font-medium mb-3">{editingSetup ? 'Edit' : 'Create'} Journal Entry Setup</h6>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="setup-name">Name</Label>
+                  <Input 
+                    id="setup-name"
+                    value={setupForm.name}
+                    onChange={(e) => setSetupForm({...setupForm, name: e.target.value})}
+                    placeholder="Setup name"
+                    data-testid="input-setup-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="setup-description">Description</Label>
+                  <Input 
+                    id="setup-description"
+                    value={setupForm.description}
+                    onChange={(e) => setSetupForm({...setupForm, description: e.target.value})}
+                    placeholder="Optional description"
+                    data-testid="input-setup-description"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="setup-entry-type">Entry Type</Label>
+                  <Select value={setupForm.entryType} onValueChange={(value) => setSetupForm({...setupForm, entryType: value})}>
+                    <SelectTrigger data-testid="select-entry-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="initial">Initial Recognition</SelectItem>
+                      <SelectItem value="periodic">Periodic Entry</SelectItem>
+                      <SelectItem value="final">Final Entry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="setup-trigger">Trigger Event</Label>
+                  <Select value={setupForm.triggerEvent} onValueChange={(value) => setSetupForm({...setupForm, triggerEvent: value})}>
+                    <SelectTrigger data-testid="select-trigger-event">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="contract_start">Contract Start</SelectItem>
+                      <SelectItem value="payment_due">Payment Due</SelectItem>
+                      <SelectItem value="period_end">Period End</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="setup-debit">Debit Account</Label>
+                  <Input 
+                    id="setup-debit"
+                    value={setupForm.debitAccount}
+                    onChange={(e) => setSetupForm({...setupForm, debitAccount: e.target.value})}
+                    placeholder="Debit account"
+                    data-testid="input-debit-account"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="setup-credit">Credit Account</Label>
+                  <Input 
+                    id="setup-credit"
+                    value={setupForm.creditAccount}
+                    onChange={(e) => setSetupForm({...setupForm, creditAccount: e.target.value})}
+                    placeholder="Credit account"
+                    data-testid="input-credit-account"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="setup-amount-column">ASC 842 Amount Column</Label>
+                  <Select value={setupForm.amountColumn} onValueChange={(value) => setSetupForm({...setupForm, amountColumn: value})}>
+                    <SelectTrigger data-testid="select-amount-column">
+                      <SelectValue placeholder="Select column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {asc842Columns.map((column) => (
+                        <SelectItem key={column.value} value={column.value}>
+                          {column.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="setup-period-ref">Period Reference</Label>
+                  <Select value={setupForm.periodReference} onValueChange={(value) => setSetupForm({...setupForm, periodReference: value})}>
+                    <SelectTrigger data-testid="select-period-reference">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {periodReferences.map((period) => (
+                        <SelectItem key={period.value} value={period.value}>
+                          {period.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end mt-4 space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowSetupForm(false);
+                    setEditingSetup(null);
+                    setSetupForm({
+                      name: '',
+                      description: '',
+                      entryType: 'periodic',
+                      triggerEvent: 'payment_due',
+                      debitAccount: '',
+                      creditAccount: '',
+                      amountColumn: '',
+                      periodReference: 'n'
+                    });
+                  }}
+                  data-testid="button-cancel-setup"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveSetup}
+                  disabled={createSetupMutation.isPending || updateSetupMutation.isPending}
+                  data-testid="button-save-setup"
+                >
+                  {createSetupMutation.isPending || updateSetupMutation.isPending ? 'Saving...' : 'Save Setup'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Existing setups table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Name</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Entry Type</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Trigger</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Accounts</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Amount Source</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {journalSetups?.map((setup: any) => (
+                  <tr key={setup.id} className="border-b border-border">
+                    <td className="py-2 px-2 font-medium" data-testid={`setup-name-${setup.id}`}>
+                      {setup.name}
+                      {setup.description && (
+                        <div className="text-xs text-muted-foreground">{setup.description}</div>
+                      )}
+                    </td>
+                    <td className="py-2 px-2" data-testid={`setup-type-${setup.id}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        setup.entryType === 'initial' ? 'bg-blue-100 text-blue-600' :
+                        setup.entryType === 'periodic' ? 'bg-green-100 text-green-600' :
+                        'bg-orange-100 text-orange-600'
+                      }`}>
+                        {setup.entryType}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2" data-testid={`setup-trigger-${setup.id}`}>
+                      {setup.triggerEvent.replace('_', ' ')}
+                    </td>
+                    <td className="py-2 px-2" data-testid={`setup-accounts-${setup.id}`}>
+                      <div className="text-xs">
+                        <div>Dr: {setup.debitAccount}</div>
+                        <div>Cr: {setup.creditAccount}</div>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2" data-testid={`setup-amount-${setup.id}`}>
+                      {asc842Columns.find(col => col.value === setup.amountColumn)?.label || setup.amountColumn}
+                    </td>
+                    <td className="py-2 px-2" data-testid={`setup-period-${setup.id}`}>
+                      {periodReferences.find(period => period.value === setup.periodReference)?.label || setup.periodReference}
+                    </td>
+                    <td className="py-2 px-2">
+                      <div className="flex space-x-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditSetup(setup)}
+                          data-testid={`button-edit-setup-${setup.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDeleteSetup(setup.id)}
+                          disabled={deleteSetupMutation.isPending}
+                          data-testid={`button-delete-setup-${setup.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {(!journalSetups || journalSetups.length === 0) && (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                      No journal entry setups configured. Create your first setup to automate journal entry generation.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
