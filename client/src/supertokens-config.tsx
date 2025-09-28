@@ -21,7 +21,7 @@ export function getWebsiteDomain() {
 
 export const SuperTokensConfig = {
     appInfo: {
-        appName: "YuKa Contracts",
+        appName: "Kontracts",
         apiDomain: getApiDomain(),
         websiteDomain: getWebsiteDomain(),
         apiBasePath: "/auth",

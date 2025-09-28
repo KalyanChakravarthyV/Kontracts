@@ -29,7 +29,7 @@ export function Sidebar() {
             </div>
             {!isCollapsed && (
               <div>
-                <h1 className="font-bold text-lg">YuKa Contracts</h1>
+                <h1 className="font-bold text-lg">Kontracts</h1>
                 <p className="text-sm text-muted-foreground">Pro Platform</p>
               </div>
             )}

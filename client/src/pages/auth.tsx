@@ -42,7 +42,7 @@ export default function Auth() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Welcome to YuKa Contracts
+              Welcome to Kontracts
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
               Sign in to access your contract management dashboard
