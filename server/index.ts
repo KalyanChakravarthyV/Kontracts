@@ -1,8 +1,32 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import supertokens from "supertokens-node";
+import { middleware, errorHandler } from "supertokens-node/framework/express";
+import { SuperTokensConfig, getWebsiteDomain } from "./supertokens-config";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Initialize SuperTokens
+supertokens.init(SuperTokensConfig);
+
 const app = express();
+
+// CORS configuration for SuperTokens
+app.use(
+  cors({
+    origin: getWebsiteDomain(),
+    allowedHeaders: ["content-type", ...supertokens.getAllCORSHeaders()],
+    methods: ["GET", "PUT", "POST", "DELETE"],
+    credentials: true,
+  })
+);
+
+// SuperTokens middleware
+app.use(middleware());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -38,6 +62,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // SuperTokens error handler
+  app.use(errorHandler());
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
