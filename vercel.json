@@ -7,9 +7,24 @@
       "config": {
         "distDir": "client/dist"
       }
+    },
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30
+      }
+    },
+    {
+      "src": "api/health.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/health.ts"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.ts"
@@ -19,11 +34,6 @@
       "dest": "/client/dist/$1"
     }
   ],
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 30
-    }
-  },
   "installCommand": "npm install",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "client/dist"
