@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+.npm
+.pnpm-debug.log*
+
+# Testing
+coverage
+tests
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Environment files (will be set in Vercel dashboard)
+.env.local
+.env.development
+.env.test
+
+# Development files
+.vscode
+.idea
+*.log
+
+# Build artifacts
+.next
+.nuxt
+.cache
+.parcel-cache
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
