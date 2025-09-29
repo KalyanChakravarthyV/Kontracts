@@ -1,0 +1,54 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build artifacts
+dist
+client/dist
+coverage
+
+# Development files
+.git
+.gitignore
+README.md
+*.md
+.replit
+.local
+.config
+.DS_Store
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+tests
+jest.config.js
+
+# Vercel
+.vercel
+vercel.json
+.vercelignore
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Cache directories
+.cache
+.parcel-cache
+
+# Logs
+logs
+*.log
+
+# Claude AI
+.claude
