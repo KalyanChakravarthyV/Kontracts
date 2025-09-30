@@ -29,22 +29,28 @@ function SessionGate({ children }: SessionGateProps) {
   useEffect(() => {
     async function checkSession() {
       try {
+        console.log('AuthWrapper: Checking session for location:', location);
         const sessionExists = await Session.doesSessionExist();
+        console.log('AuthWrapper: Session exists:', sessionExists);
         setHasSession(sessionExists);
 
         // If no session and not on auth pages, redirect to auth
         if (!sessionExists && !location.startsWith('/auth')) {
+          console.log('AuthWrapper: No session found, redirecting to auth');
           setLocation('/auth');
+          return;
         }
 
         // If has session and on auth pages, redirect to dashboard
         if (sessionExists && location.startsWith('/auth')) {
+          console.log('AuthWrapper: Has session, redirecting to dashboard');
           setLocation('/dashboard');
         }
       } catch (error) {
-        console.error('Session check failed:', error);
+        console.error('AuthWrapper: Session check failed:', error);
         setHasSession(false);
         if (!location.startsWith('/auth')) {
+          console.log('AuthWrapper: Error occurred, redirecting to auth');
           setLocation('/auth');
         }
       } finally {
@@ -63,5 +69,22 @@ function SessionGate({ children }: SessionGateProps) {
     );
   }
 
-  return <>{children}</>;
+  // Only render children if user has a valid session and not on auth pages
+  if (hasSession && !location.startsWith('/auth')) {
+    return <>{children}</>;
+  }
+
+  // If on auth pages, always render (login/signup)
+  if (location.startsWith('/auth')) {
+    return <>{children}</>;
+  }
+
+  // No session and not on auth pages - redirect (this should not happen due to useEffect, but safety net)
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <p className="text-gray-600">Redirecting to login...</p>
+      </div>
+    </div>
+  );
 }

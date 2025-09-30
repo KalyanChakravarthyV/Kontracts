@@ -8,6 +8,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  createUserWithId(id: string, user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   // Contract management
   getContracts(userId: string): Promise<Contract[]>;
@@ -71,7 +73,14 @@ export class MemStorage implements IStorage {
       username: "jane.doe",
       password: "hashed_password",
       name: "Jane Doe",
-      role: "Contract Administrator"
+      role: "Contract Administrator",
+      email: "jane.doe@example.com",
+      department: "Finance",
+      avatar: null,
+      settings: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastLoginAt: null
     };
     this.users.set(defaultUser.id, defaultUser);
 
@@ -119,13 +128,49 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
+    const now = new Date();
+    const user: User = {
       ...insertUser,
       id,
-      role: insertUser.role || "Contract Administrator"
+      role: insertUser.role || "Contract Administrator",
+      email: insertUser.email || null,
+      department: insertUser.department || null,
+      avatar: insertUser.avatar || null,
+      settings: insertUser.settings || null,
+      createdAt: insertUser.createdAt || now,
+      updatedAt: insertUser.updatedAt || now,
+      lastLoginAt: insertUser.lastLoginAt || null
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async createUserWithId(id: string, insertUser: InsertUser): Promise<User> {
+    const now = new Date();
+    const user: User = {
+      ...insertUser,
+      id,
+      role: insertUser.role || "Contract Administrator",
+      email: insertUser.email || null,
+      department: insertUser.department || null,
+      avatar: insertUser.avatar || null,
+      settings: insertUser.settings || null,
+      createdAt: insertUser.createdAt || now,
+      updatedAt: insertUser.updatedAt || now,
+      lastLoginAt: insertUser.lastLoginAt || null
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) {
+      return undefined;
+    }
+    const updatedUser: User = { ...existingUser, ...updates, id };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async getContracts(userId: string): Promise<Contract[]> {
@@ -360,6 +405,23 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async createUserWithId(id: string, insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({ ...insertUser, id })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async getContracts(userId: string): Promise<Contract[]> {

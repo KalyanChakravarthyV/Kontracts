@@ -9,6 +9,13 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("Contract Administrator"),
+  email: text("email"),
+  department: text("department"),
+  avatar: text("avatar"),
+  settings: jsonb("settings"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+  lastLoginAt: timestamp("last_login_at"),
 });
 
 export const contracts = pgTable("contracts", {

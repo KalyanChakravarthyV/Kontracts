@@ -1,14 +1,39 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [location] = useLocation();
+  const queryClient = useQueryClient();
+
   const { data: user } = useQuery({
     queryKey: ["/api/user/profile"],
   });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout");
+    },
+    onSuccess: () => {
+      // Clear all cached data
+      queryClient.clear();
+      // Redirect to login page or refresh
+      window.location.href = "/auth";
+    },
+    onError: (error) => {
+      console.error("Logout failed:", error);
+      // Even if logout fails on server, clear local cache and redirect
+      queryClient.clear();
+      window.location.href = "/auth";
+    }
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -180,12 +205,18 @@ export function Sidebar() {
               </p>
             </div>
           )}
-          <button 
-            className="text-muted-foreground hover:text-foreground"
+          <button
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+            className="text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="button-logout"
             title={isCollapsed ? "Logout" : ""}
           >
-            <i className="fas fa-sign-out-alt"></i>
+            {logoutMutation.isPending ? (
+              <i className="fas fa-spinner fa-spin"></i>
+            ) : (
+              <i className="fas fa-sign-out-alt"></i>
+            )}
           </button>
         </div>
       </div>

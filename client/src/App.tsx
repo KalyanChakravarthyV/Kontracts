@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 // import { Toaster } from "@/components/ui/toaster";
 // import { TooltipProvider } from "@/components/ui/tooltip";
 import SuperTokens from "supertokens-auth-react";
-// import { AuthWrapper } from "@/components/auth/AuthWrapper";
+import { AuthWrapper } from "@/components/auth/AuthWrapper";
 import { SuperTokensConfig } from "./supertokens-config";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
@@ -40,10 +40,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div>
-        {/* <Toaster /> */}
-        <Router />
-      </div>
+      <AuthWrapper>
+        <div>
+          {/* <Toaster /> */}
+          <Router />
+        </div>
+      </AuthWrapper>
     </QueryClientProvider>
   );
 }

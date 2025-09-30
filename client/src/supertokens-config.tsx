@@ -6,15 +6,15 @@ import Session from "supertokens-auth-react/recipe/session";
 export function getApiDomain() {
     const apiPort = import.meta.env.VITE_API_PORT || 3000;
     const apiUrl = import.meta.env.NODE_ENV === 'production'
-        ? `https://your-production-domain.com`
+        ? `https://${import.meta.env.PRODUCTION_DOMAIN || 'your-production-domain.com'}`
         : `http://localhost:${apiPort}`;
     return apiUrl;
 }
 
 export function getWebsiteDomain() {
-    const websitePort = 5173;
+    const websitePort = import.meta.env.NODE_ENV === 'production' ? (import.meta.env.VITE_API_PORT || 3000) : 3000;
     const websiteUrl = import.meta.env.NODE_ENV === 'production'
-        ? `https://your-production-domain.com`
+        ? `https://${import.meta.env.PRODUCTION_DOMAIN || 'your-production-domain.com'}`
         : `http://localhost:${websitePort}`;
     return websiteUrl;
 }

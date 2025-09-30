@@ -1,5 +1,10 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import Session from "supertokens-node/recipe/session";
+import ThirdParty from "supertokens-node/recipe/thirdparty";
+import Passwordless from "supertokens-node/recipe/passwordless";
+import { SessionRequest } from "supertokens-node/framework/express";
 import { storage } from "./storage.js";
 import { upload, extractAndProcessContract } from "./services/documentProcessor.js";
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
@@ -25,7 +30,12 @@ async function withMockFallback<T>(
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString(), version: "1.0.0" });
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
@@ -868,39 +878,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User profile
-  app.get("/api/user/profile", async (req, res) => {
+  // User profile - production-grade with SuperTokens authentication
+  app.get("/api/user/profile", verifySession(), async (req: SessionRequest, res) => {
     try {
-      const user = await withMockFallback(
-        () => storage.getUser("user-1"),
-        {
-          id: "user-1",
-          email: "demo@example.com",
-          name: "Demo User",
-          role: "admin",
+      const session = req.session!;
+      const userId = session.getUserId();
+
+      // Try to get additional user data from our database
+      let dbUser;
+      try {
+        dbUser = await storage.getUser(userId);
+      } catch (error) {
+        console.log("User not found in database, will create:", userId);
+      }
+
+      // If user doesn't exist in our database, create them
+      if (!dbUser) {
+        // Get user metadata from SuperTokens session
+        let email = "";
+        let name = "";
+
+        // Try to get user details from third party providers
+        try {
+          const thirdPartyUser = await ThirdParty.getUserById(userId);
+          if (thirdPartyUser) {
+            email = thirdPartyUser.email || "";
+            if (thirdPartyUser.thirdParty?.userId) {
+              name = thirdPartyUser.thirdParty.userId;
+            }
+          }
+        } catch (tpError) {
+          console.log("No third party user found:", tpError);
+        }
+
+        // Try passwordless if no third party
+        if (!email && !name) {
+          try {
+            const passwordlessUser = await Passwordless.getUserById(userId);
+            if (passwordlessUser) {
+              email = passwordlessUser.email || passwordlessUser.phoneNumber || "";
+              name = email.split('@')[0] || "User";
+            }
+          } catch (plError) {
+            console.log("No passwordless user found:", plError);
+          }
+        }
+
+        // Fallback values
+        if (!email) email = `user-${userId}@example.com`;
+        if (!name) name = `User ${userId.substring(0, 8)}`;
+
+        // Create user in our database
+        dbUser = await storage.createUserWithId(userId, {
+          username: email.split('@')[0] || `user-${userId.substring(0, 8)}`,
+          email,
+          name,
+          role: "Contract Administrator",
           department: "Finance",
-          joinDate: "2024-01-15",
+          password: "", // SuperTokens handles authentication
           avatar: null,
           settings: {
             notifications: true,
             darkMode: false,
             language: "en"
-          },
-          lastLoginAt: new Date().toISOString(),
-          createdAt: "2024-01-15T10:00:00.000Z",
-          updatedAt: new Date().toISOString()
-        },
-        "Get user profile"
-      );
-
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+          }
+        });
       }
 
-      const { password, ...userProfile } = user;
-      res.json(userProfile);
+      // Update last login
+      try {
+        await storage.updateUser(userId, {
+          lastLoginAt: new Date(),
+          updatedAt: new Date()
+        });
+      } catch (updateError) {
+        console.log("Failed to update last login:", updateError);
+      }
+
+      // Return user profile (exclude sensitive data)
+      const { password, ...userProfile } = dbUser;
+
+      res.json({
+        ...userProfile,
+        sessionInfo: {
+          userId: session.getUserId(),
+          sessionHandle: session.getHandle(),
+          accessTokenPayload: session.getAccessTokenPayload(),
+          sessionData: await session.getSessionDataFromDatabase()
+        }
+      });
+
     } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
+      console.error("User profile error:", error);
+
+      if ((error as any)?.type === Session.Error.UNAUTHORISED) {
+        return res.status(401).json({ message: "Unauthorized - please login" });
+      }
+
+      res.status(500).json({
+        message: "Failed to fetch user profile",
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
+    }
+  });
+
+  // Logout endpoint - revoke SuperTokens session
+  app.post("/api/auth/logout", verifySession(), async (req: SessionRequest, res) => {
+    try {
+      const session = req.session!;
+      const userId = session.getUserId();
+
+      // Update last logout time in our database
+      try {
+        await storage.updateUser(userId, {
+          updatedAt: new Date()
+        });
+      } catch (updateError) {
+        console.log("Failed to update user logout time:", updateError);
+      }
+
+      // Revoke the session
+      await session.revokeSession();
+
+      res.json({
+        success: true,
+        message: "Logged out successfully"
+      });
+
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      if ((error as any)?.type === Session.Error.UNAUTHORISED) {
+        return res.status(401).json({ message: "No active session found" });
+      }
+
+      res.status(500).json({
+        message: "Failed to logout",
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
+    }
+  });
+
+  // Logout all sessions endpoint - revoke all sessions for the user
+  app.post("/api/auth/logout-all", verifySession(), async (req: SessionRequest, res) => {
+    try {
+      const session = req.session!;
+      const userId = session.getUserId();
+
+      // Update last logout time in our database
+      try {
+        await storage.updateUser(userId, {
+          updatedAt: new Date()
+        });
+      } catch (updateError) {
+        console.log("Failed to update user logout time:", updateError);
+      }
+
+      // Revoke all sessions for this user
+      await Session.revokeAllSessionsForUser(userId);
+
+      res.json({
+        success: true,
+        message: "Logged out from all devices successfully"
+      });
+
+    } catch (error) {
+      console.error("Logout all error:", error);
+
+      if ((error as any)?.type === Session.Error.UNAUTHORISED) {
+        return res.status(401).json({ message: "No active session found" });
+      }
+
+      res.status(500).json({
+        message: "Failed to logout from all devices",
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
     }
   });
 

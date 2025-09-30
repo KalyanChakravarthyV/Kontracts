@@ -37,14 +37,19 @@ export default function Auth() {
 
   // Default auth UI - render SuperTokens components
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <div className="bg-card py-8 px-4 shadow-lg border rounded-lg sm:px-10">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                <i className="fas fa-file-contract text-2xl"></i>
+              </div>
+            </div>
+            <h2 className="text-center text-3xl font-bold text-foreground">
               Welcome to Kontracts
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-muted-foreground">
               Sign in to access your contract management dashboard
             </p>
           </div>

@@ -15,7 +15,7 @@ export function getApiDomain() {
 }
 
 export function getWebsiteDomain() {
-    const websitePort = process.env.NODE_ENV === 'production' ? (process.env.PORT || 3000) : 5173;
+    const websitePort = process.env.NODE_ENV === 'production' ? (process.env.PORT || 3000) : 3000;
     const websiteUrl = process.env.NODE_ENV === 'production'
         ? `https://${process.env.PRODUCTION_DOMAIN || 'your-production-domain.com'}`
         : `http://localhost:${websitePort}`;
@@ -28,7 +28,7 @@ export const SuperTokensConfig: TypeInput = {
         apiKey: process.env.SUPERTOKENS_API_KEY,
     },
     appInfo: {
-        appName: "YuKa Contracts",
+        appName: "Kontracts",
         apiDomain: getApiDomain(),
         websiteDomain: getWebsiteDomain(),
         apiBasePath: "/auth",
