@@ -9,15 +9,15 @@ import type { TypeInput } from "supertokens-node/types";
 export function getApiDomain() {
     const apiPort = process.env.PORT || 3000;
     const apiUrl = process.env.NODE_ENV === 'production'
-        ? `https://your-production-domain.com`
+        ? `https://${process.env.PRODUCTION_DOMAIN || 'your-production-domain.com'}`
         : `http://localhost:${apiPort}`;
     return apiUrl;
 }
 
 export function getWebsiteDomain() {
-    const websitePort = 5173;
+    const websitePort = process.env.NODE_ENV === 'production' ? (process.env.PORT || 3000) : 5173;
     const websiteUrl = process.env.NODE_ENV === 'production'
-        ? `https://your-production-domain.com`
+        ? `https://${process.env.PRODUCTION_DOMAIN || 'your-production-domain.com'}`
         : `http://localhost:${websitePort}`;
     return websiteUrl;
 }

@@ -4,7 +4,7 @@ dotenv.config();
 import fs from 'fs';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from "@shared/schema";
+import * as schema from "./model/schema.ts";
 
 // PostgreSQL configuration
 const config = {
@@ -13,9 +13,11 @@ const config = {
   host: process.env.DB_HOST || "pg-1f58af3a-pg-contracts.h.aivencloud.com",
   port: parseInt(process.env.DB_PORT || "25648"),
   database: process.env.DB_NAME || "defaultdb",
-  ssl: {
+  ssl: process.env.DB_CA_CERT ? {
     rejectUnauthorized: true,
-    ca: process.env.DB_CA_CERT || fs.readFileSync('./ca.pem').toString(),
+    ca: fs.readFileSync(process.env.DB_CA_CERT).toString(),
+  } : {
+    rejectUnauthorized: false,
   },
   // Connection pool configuration
   max: 20,

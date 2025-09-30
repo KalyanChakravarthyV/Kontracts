@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, contracts, payments, aiRecommendations } from "@shared/schema";
+import { users, contracts, payments, aiRecommendations } from "./model/schema.ts";
 
 export async function seedDatabase() {
   console.log("Seeding database...");

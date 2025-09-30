@@ -5,7 +5,7 @@ import { upload, extractAndProcessContract } from "./services/documentProcessor.
 import { generateASC842Schedule, generateIFRS16Schedule, generateJournalEntries, calculatePresentValue } from "./services/complianceCalculator.js";
 
 import { generateAIRecommendations } from "./services/openai.js";
-import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema, insertJournalEntrySetupSchema, updatePaymentSchema } from "@shared/schema";
+import { insertContractSchema, insertDocumentSchema, insertComplianceScheduleSchema, insertJournalEntrySchema, insertJournalEntrySetupSchema, updatePaymentSchema } from "./model/schema.ts";
 import { ZodError } from "zod";
 import type { MulterRequest } from "./types/multer.js";
 import * as XLSX from 'xlsx';

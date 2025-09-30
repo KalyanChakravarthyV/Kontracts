@@ -38,13 +38,12 @@ COPY package.json ./
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nextjs:nodejs /app/client/dist ./client/dist
 
 # Copy necessary runtime files
 COPY --from=builder --chown=nextjs:nodejs /app/server ./server
-COPY --from=builder --chown=nextjs:nodejs /app/shared ./shared
 COPY --from=builder --chown=nextjs:nodejs /app/uploads ./uploads
+COPY --from=builder --chown=nextjs:nodejs /app/ca.pem ./ca.pem
 
 # Create uploads directory with proper permissions
 RUN mkdir -p ./uploads && chown nextjs:nodejs ./uploads
@@ -58,4 +57,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Start the application
-CMD ["node", "dist/index.js"]
+CMD ["npm", "start"]

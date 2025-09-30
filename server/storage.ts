@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type JournalEntrySetup, type InsertJournalEntrySetup, type Payment, type InsertPayment, type UpdatePayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, journalEntrySetups, payments, aiRecommendations } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Document, type InsertDocument, type ComplianceSchedule, type InsertComplianceSchedule, type JournalEntry, type InsertJournalEntry, type JournalEntrySetup, type InsertJournalEntrySetup, type Payment, type InsertPayment, type UpdatePayment, type AIRecommendation, type InsertAIRecommendation, users, contracts, documents, complianceSchedules, journalEntries, journalEntrySetups, payments, aiRecommendations } from "./model/schema.ts";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
